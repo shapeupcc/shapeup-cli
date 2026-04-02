@@ -1,0 +1,12 @@
+{
+  "name": "shapeup",
+  "version": "0.1.0",
+  "description": "ShapeUp integration for Claude Code. Manage pitches, scopes, tasks, cycles, and track Shape Up progress.",
+  "author": {
+    "name": "ShapeUp",
+    "email": "hello@shapeup.cc"
+  },
+  "homepage": "https://github.com/shapeup-cc/shapeup-cli",
+  "repository": "https://github.com/shapeup-cc/shapeup-cli",
+  "license": "MIT"
+}
