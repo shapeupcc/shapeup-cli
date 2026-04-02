@@ -11,7 +11,8 @@ module ShapeupCli
           subcommands: [
             { name: "list", short: "List scopes for a pitch", path: "shapeup scopes list --pitch <id>" },
             { name: "create", short: "Create a new scope", path: "shapeup scopes create --pitch <id> \"Title\"" },
-            { name: "update", short: "Update scope title or color", path: "shapeup scopes update <id> --title \"New\"" }
+            { name: "update", short: "Update scope title or color", path: "shapeup scopes update <id> --title \"New\"" },
+            { name: "position", short: "Update hill chart position (0-100)", path: "shapeup scopes position <id> <position>" }
           ],
           flags: [
             { name: "pitch", type: "string", usage: "Pitch ID (required for list and create)" },
@@ -21,7 +22,8 @@ module ShapeupCli
           examples: [
             "shapeup scopes list --pitch 42",
             "shapeup scopes create --pitch 42 \"User onboarding\"",
-            "shapeup scopes update 7 --title \"Revised onboarding\""
+            "shapeup scopes update 7 --title \"Revised onboarding\"",
+            "shapeup scopes position 7 50"
           ]
         }
       end
@@ -30,8 +32,9 @@ module ShapeupCli
         subcommand = positional_arg(0)
 
         case subcommand
-        when "create" then create
-        when "update" then update
+        when "create"   then create
+        when "update"   then update
+        when "position" then position
         when "list", nil then list
         else list
         end
@@ -62,6 +65,19 @@ module ShapeupCli
             breadcrumbs: [
               { cmd: "shapeup tasks list --scope <id>", description: "List tasks in this scope" },
               { cmd: "shapeup todo \"Task\" --pitch #{pitch_id} --scope <id>", description: "Add a task" }
+            ]
+        end
+
+        def position
+          scope_id = positional_arg(1) || abort("Usage: shapeup scopes position <id> <position>")
+          pos = positional_arg(2) || abort("Usage: shapeup scopes position <id> <position>")
+
+          result = call_tool("update_scope_position", scope: scope_id.to_s, position: pos.to_f)
+
+          render result,
+            summary: "Scope ##{scope_id} moved to position #{pos}",
+            breadcrumbs: [
+              { cmd: "shapeup scopes list --pitch <id>", description: "List scopes" }
             ]
         end
 

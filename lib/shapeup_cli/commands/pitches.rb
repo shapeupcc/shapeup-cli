@@ -11,19 +11,25 @@ module ShapeupCli
           subcommands: [
             { name: "list", short: "List pitches (default)", path: "shapeup pitches list" },
             { name: "show", short: "Show pitch details with scopes and tasks", path: "shapeup pitches show <id>" },
+            { name: "create", short: "Create a new pitch", path: "shapeup pitches create \"Title\" --stream \"Name\"" },
             { name: "help", short: "Show usage", path: "shapeup pitches help" }
           ],
           flags: [
             { name: "status", type: "string", usage: "Filter by status: idea, framed, shaped" },
             { name: "cycle", type: "string", usage: "Filter by cycle ID" },
-            { name: "limit", type: "integer", usage: "Limit number of results" }
+            { name: "limit", type: "integer", usage: "Limit number of results" },
+            { name: "stream", type: "string", usage: "Stream name or ID (for create)" },
+            { name: "appetite", type: "string", usage: "Appetite: unknown, small_batch, big_batch (for create, default: big_batch)" },
+            { name: "cycle-id", type: "string", usage: "Assign to cycle ID (for create)" }
           ],
           examples: [
             "shapeup pitches list",
             "shapeup pitches list --status shaped",
             "shapeup pitches list --cycle 5",
             "shapeup pitch 42",
-            "shapeup pitch 42 --json"
+            "shapeup pitch 42 --json",
+            "shapeup pitches create \"Redesign Search\" --stream \"Platform\"",
+            "shapeup pitches create \"Auth Overhaul\" --stream \"Platform\" --appetite small_batch"
           ]
         }
       end
@@ -33,6 +39,7 @@ module ShapeupCli
 
         case subcommand
         when "show"      then show
+        when "create"    then create
         when "list", nil then list
         when "help"      then help
         else
@@ -104,6 +111,27 @@ module ShapeupCli
           )
         end
 
+        def create
+          title = positional_arg(1) || abort("Usage: shapeup pitches create \"Title\" --stream \"Name\"")
+          stream = extract_option("--stream") || abort("Usage: shapeup pitches create \"Title\" --stream \"Name\"")
+          appetite = extract_option("--appetite")
+          cycle_id = extract_option("--cycle-id")
+
+          args = { title: title, stream: stream }
+          args[:appetite] = appetite if appetite
+          args[:cycle] = cycle_id if cycle_id
+
+          result = call_tool("create_package", **args)
+
+          render result,
+            summary: "Pitch created",
+            breadcrumbs: [
+              { cmd: "shapeup scopes create --pitch <id> \"Title\"", description: "Add a scope" },
+              { cmd: "shapeup todo \"Task\" --pitch <id>", description: "Add a task" },
+              { cmd: "shapeup pitch <id>", description: "View pitch details" }
+            ]
+        end
+
         def help
           puts <<~HELP
             Usage: shapeup pitches <subcommand> [options]
@@ -111,12 +139,18 @@ module ShapeupCli
             Subcommands:
               list              List pitches (default)
               show <id>         Show pitch details
+              create "Title"    Create a new pitch
               help              This help
 
-            Filters:
+            Filters (list):
               --status <s>      Filter by status: idea, framed, shaped
               --cycle <id>      Filter by cycle
               --limit <n>       Limit results
+
+            Options (create):
+              --stream <name>   Stream name or ID (required)
+              --appetite <a>    unknown, small_batch, big_batch (default: big_batch)
+              --cycle-id <id>   Assign to a cycle
 
             Output:
               --json            JSON envelope with breadcrumbs
@@ -126,9 +160,9 @@ module ShapeupCli
             Examples:
               shapeup pitches list
               shapeup pitches list --status shaped
-              shapeup pitches list --cycle 5
-              shapeup pitches list --status shaped --limit 10
               shapeup pitch 42
+              shapeup pitches create "Redesign Search" --stream "Platform"
+              shapeup pitches create "Auth Overhaul" --stream "Platform" --appetite small_batch
           HELP
         end
     end
