@@ -142,6 +142,8 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | List pitches | `shapeup pitches list --json` |
 | List shaped only | `shapeup pitches list --status shaped --json` |
 | Show pitch detail | `shapeup pitch <id> --json` |
+| Create pitch | `shapeup pitches create "Title" --stream "Name"` |
+| Create with appetite | `shapeup pitches create "Title" --stream "Name" --appetite small_batch` |
 | **Cycles** | |
 | List cycles | `shapeup cycles --json` |
 | Active cycles | `shapeup cycles --status active --json` |
@@ -149,6 +151,7 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | **Scopes & Tasks** | |
 | List scopes | `shapeup scopes list --pitch <id> --json` |
 | Create scope | `shapeup scopes create --pitch <id> "Title"` |
+| Update hill position | `shapeup scopes position <id> <0-100>` |
 | List tasks | `shapeup tasks list --pitch <id> --json` |
 | Create task | `shapeup todo "Description" --pitch <id>` |
 | Complete task(s) | `shapeup done <id> [<id>...]` |
@@ -239,14 +242,22 @@ Always include: what changed, the commit link (full GitHub URL, not markdown —
 ### Create Work
 
 ```bash
-# Report a bug
-shapeup issues create "Login timeout" --stream "Platform" --kind bug
+# Create a pitch
+shapeup pitches create "Redesign Search" --stream "Platform"
+shapeup pitches create "Auth Overhaul" --stream "Platform" --appetite small_batch
 
 # Add scope to a pitch
 shapeup scopes create --pitch 42 "User onboarding"
 
+# Update hill chart position
+shapeup scopes position 7 50    # peak — fully understood
+shapeup scopes position 7 80    # descending — executing
+
 # Add tasks
 shapeup todo "Design signup flow" --pitch 42 --scope <scope_id>
+
+# Report a bug
+shapeup issues create "Login timeout" --stream "Platform" --kind bug
 ```
 
 ## Decision Trees
