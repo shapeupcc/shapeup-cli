@@ -108,6 +108,22 @@ module ShapeupCli
         def positional_args
           @remaining.reject { |a| a.start_with?("--") }
         end
+
+        # Presence-only boolean flag. Returns true if present, removes from @remaining.
+        def consume_flag(flag)
+          !!@remaining.delete(flag)
+        end
+
+        # Parse --comments/--no-comments + --comments-limit N into MCP args.
+        def comment_flags
+          args = {}
+          args[:include_comments] = false if consume_flag("--no-comments")
+          consume_flag("--comments") # explicit opt-in, no-op since default is true
+          if (limit = extract_option("--comments-limit"))
+            args[:comments_limit] = limit.to_i
+          end
+          args
+        end
     end
   end
 end

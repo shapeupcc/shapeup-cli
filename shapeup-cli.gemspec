@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = "shapeup-cli"
-  s.version     = "0.3.2"
+  s.version     = "0.3.3"
   s.summary     = "ShapeUp CLI — manage pitches, scopes, tasks, and cycles from the terminal"
   s.description = "Command-line interface for ShapeUp, the Shape Up methodology platform. " \
                   "Works with any AI agent that can execute shell commands. " \

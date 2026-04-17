@@ -47,4 +47,24 @@ class ArgsTest < Minitest::Test
       assert metadata[:short], "#{name} missing :short in metadata"
     end
   end
+
+  def test_comment_flags_defaults_to_empty
+    instance = ShapeupCli::Commands::Issues.new(%w[show 42])
+    assert_equal({}, instance.send(:comment_flags))
+  end
+
+  def test_comment_flags_parses_no_comments
+    instance = ShapeupCli::Commands::Issues.new(%w[show 42 --no-comments])
+    assert_equal({ include_comments: false }, instance.send(:comment_flags))
+  end
+
+  def test_comment_flags_parses_limit
+    instance = ShapeupCli::Commands::Issues.new(%w[show 42 --comments-limit 25])
+    assert_equal({ comments_limit: 25 }, instance.send(:comment_flags))
+  end
+
+  def test_comment_flags_parses_both
+    instance = ShapeupCli::Commands::Issues.new(%w[show 42 --no-comments --comments-limit 5])
+    assert_equal({ include_comments: false, comments_limit: 5 }, instance.send(:comment_flags))
+  end
 end

@@ -37,7 +37,9 @@ module ShapeupCli
             { name: "all", type: "bool", usage: "Include done/closed issues (hidden by default)" },
             { name: "content", type: "string", usage: "Issue content/description" },
             { name: "title", type: "string", usage: "Issue title (for update)" },
-            { name: "archived", type: "bool", usage: "Include iceboxed issues in list" }
+            { name: "archived", type: "bool", usage: "Include iceboxed issues in list" },
+            { name: "no-comments", type: "bool", usage: "Hide embedded comments on show (default: show)" },
+            { name: "comments-limit", type: "integer", usage: "Max comments to embed on show (default: 10, max: 50)" }
           ],
           examples: [
             "shapeup issues",
@@ -125,14 +127,15 @@ module ShapeupCli
 
         def show
           id = positional_arg(1) || positional_arg(0) || abort("Usage: shapeup issue <id>")
-          result = call_tool("show_issue", issue: id.to_s)
+          result = call_tool("show_issue", issue: id.to_s, **comment_flags)
 
           render result,
             summary: "Issue ##{id}",
             breadcrumbs: [
               { cmd: "shapeup issues move #{id} --column <id>", description: "Move to column" },
               { cmd: "shapeup issues icebox #{id}", description: "Move to icebox" },
-              { cmd: "shapeup issues watch #{id}", description: "Watch this issue" }
+              { cmd: "shapeup issues watch #{id}", description: "Watch this issue" },
+              { cmd: "shapeup issue #{id} --no-comments", description: "Hide embedded comments" }
             ]
         end
 

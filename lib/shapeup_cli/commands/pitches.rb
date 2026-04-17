@@ -20,7 +20,9 @@ module ShapeupCli
             { name: "limit", type: "integer", usage: "Limit number of results" },
             { name: "stream", type: "string", usage: "Stream name or ID (for create)" },
             { name: "appetite", type: "string", usage: "Appetite: unknown, small_batch, big_batch (for create, default: big_batch)" },
-            { name: "cycle-id", type: "string", usage: "Assign to cycle ID (for create)" }
+            { name: "cycle-id", type: "string", usage: "Assign to cycle ID (for create)" },
+            { name: "no-comments", type: "bool", usage: "Hide embedded comments on show (default: show)" },
+            { name: "comments-limit", type: "integer", usage: "Max comments to embed on show (default: 10, max: 50)" }
           ],
           examples: [
             "shapeup pitches list",
@@ -74,7 +76,7 @@ module ShapeupCli
         def show(id = nil)
           id ||= positional_arg(1) || abort("Usage: shapeup pitches show <id>")
 
-          result = call_tool("show_package", package: id.to_s)
+          result = call_tool("show_package", package: id.to_s, **comment_flags)
 
           render result,
             summary: "Pitch ##{id}",
@@ -82,7 +84,8 @@ module ShapeupCli
               { cmd: "shapeup scopes list --pitch #{id}", description: "List scopes" },
               { cmd: "shapeup scopes create --pitch #{id} \"Title\"", description: "Add a scope" },
               { cmd: "shapeup todo \"Task\" --pitch #{id}", description: "Add a task" },
-              { cmd: "shapeup tasks list --pitch #{id}", description: "List all tasks" }
+              { cmd: "shapeup tasks list --pitch #{id}", description: "List all tasks" },
+              { cmd: "shapeup pitch #{id} --no-comments", description: "Hide embedded comments" }
             ]
         end
 
