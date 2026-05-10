@@ -16,7 +16,7 @@ require_relative "shapeup_cli/output"
 require_relative "shapeup_cli/commands"
 
 module ShapeupCli
-  VERSION = "0.3.2"
+  VERSION = "0.3.4"
   DEFAULT_HOST = "https://shapeup.cc"
 
   # Exit codes
@@ -30,18 +30,20 @@ module ShapeupCli
   EXIT_INTERRUPTED = 130
 
   COMMAND_MAP = {
-    "orgs"    => Commands::Orgs,
-    "pitches" => Commands::Pitches,
-    "cycle"   => Commands::Cycle,
-    "scopes"  => Commands::Scopes,
-    "tasks"   => Commands::Tasks,
-    "issues"  => Commands::Issues,
-    "my-work" => Commands::MyWork,
-    "search"  => Commands::Search,
-    "auth"    => Commands::Auth,
-    "config"  => Commands::ConfigCmd,
-    "setup"   => Commands::Setup,
-    "comments" => Commands::Comments
+    "orgs"      => Commands::Orgs,
+    "pitches"   => Commands::Pitches,
+    "cycle"     => Commands::Cycle,
+    "scopes"    => Commands::Scopes,
+    "tasks"     => Commands::Tasks,
+    "issues"    => Commands::Issues,
+    "my-work"   => Commands::MyWork,
+    "search"    => Commands::Search,
+    "auth"      => Commands::Auth,
+    "config"    => Commands::ConfigCmd,
+    "setup"     => Commands::Setup,
+    "comments"  => Commands::Comments,
+    "checklist" => Commands::Checklist,
+    "tags"      => Commands::Tags
   }.freeze
 
   def self.run(argv)
@@ -77,6 +79,8 @@ module ShapeupCli
     when "issue"          then Commands::Issues.run(["show"] + args)
     when "watching"       then Commands::Issues.run(["watching"] + args)
     when "comments"       then Commands::Comments.run(args)
+    when "checklist"      then Commands::Checklist.run(args)
+    when "tags"           then Commands::Tags.run(args)
     when "my-work", "me"  then Commands::MyWork.run(args)
     when "search"         then Commands::Search.run(args)
     when "config"         then Commands::ConfigCmd.run(args)

@@ -62,12 +62,31 @@ module ShapeupCli
           issues unwatch <id>       Stop watching
           watching                  List issues you are watching
           issues delete <id>        Delete an issue
+          issues convert <id>       Convert issue to a new pitch
+          issues add-to-pitch <id> --pitch <pid>
+                                    Fold issue into an existing pitch
 
         Comments:
           comments list --issue <id>           List comments on an issue
           comments list --pitch <id>           List comments on a pitch
           comments add --issue <id> "Text"     Add a comment to an issue
           comments add --pitch <id> "Text"     Add a comment to a pitch
+
+        Checklist:
+          checklist --pitch <id>               List the checklist on a pitch
+          checklist --issue <id>               List the checklist on an issue
+          checklist add --pitch <id> "Text"    Add an item
+          checklist tick <item_id>             Mark an item complete
+          checklist untick <item_id>           Mark an item incomplete
+          checklist edit <item_id> "Text"      Rename an item
+          checklist remove <item_id>           Delete an item
+
+        Tags:
+          tags                                 List the org's tag vocabulary
+          tags add --pitch <id> <name>         Tag a pitch
+          tags add --issue <id> <name>         Tag an issue
+          tags remove --pitch <id> <name>      Untag a pitch
+          tags remove --issue <id> <name>      Untag an issue
 
         My Work:
           my-work, me               Show everything assigned to me
@@ -128,10 +147,12 @@ module ShapeupCli
         tasks          Manage tasks (list, create, complete)
         todo           Create a task (shortcut)
         done           Complete task(s) (shortcut)
-        issues         Manage issues (list, show, create, move, icebox, watch)
+        issues         Manage issues (list, show, create, move, icebox, watch, convert, add-to-pitch)
         issue          Show an issue (shortcut)
         watching       List watched issues (shortcut)
         comments       List and add comments (list, add)
+        checklist      Manage checklist items on pitches/issues (list, add, tick, untick, edit, remove)
+        tags           List/add/remove tags on pitches and issues
         my-work / me   Show my assigned work
         search         Search everything
         config         Show/set config (set, show, init)
@@ -159,3 +180,5 @@ require_relative "commands/auth"
 require_relative "commands/config_cmd"
 require_relative "commands/setup"
 require_relative "commands/comments"
+require_relative "commands/checklist"
+require_relative "commands/tags"

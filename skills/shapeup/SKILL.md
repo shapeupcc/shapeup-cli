@@ -133,11 +133,26 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | Unassign from issue | `shapeup issues unassign <id>` (self) / `--user <id>` |
 | Watch / unwatch | `shapeup issues watch <id>` / `unwatch <id>` |
 | My watched issues | `shapeup watching --json` |
+| Convert issue to pitch | `shapeup issues convert <id>` |
+| Fold issue into pitch | `shapeup issues add-to-pitch <id> --pitch <pitch_id>` |
 | **Comments** | |
 | List comments on issue | `shapeup comments list --issue <id> --json` |
 | List comments on pitch | `shapeup comments list --pitch <id> --json` |
 | Add comment to issue | `shapeup comments add --issue <id> "Comment text"` |
 | Add comment to pitch | `shapeup comments add --pitch <id> "Comment text"` |
+| **Checklist** | |
+| List checklist on pitch | `shapeup checklist --pitch <id>` |
+| List checklist on issue | `shapeup checklist --issue <id>` |
+| Add an item | `shapeup checklist add --pitch <id> "Item text"` |
+| Tick / untick an item | `shapeup checklist tick <item_id>` / `untick <item_id>` |
+| Rename an item | `shapeup checklist edit <item_id> "New text"` |
+| Remove an item | `shapeup checklist remove <item_id>` |
+| **Tags** | |
+| List tag vocabulary | `shapeup tags` |
+| Tag a pitch | `shapeup tags add --pitch <id> <name>` |
+| Tag an issue | `shapeup tags add --issue <id> <name>` |
+| Untag | `shapeup tags remove --pitch <id> <name>` |
+| Filter pitches by tag | `shapeup pitches list --tag <name>` |
 | **Pitches** | |
 | List pitches | `shapeup pitches list --json` |
 | List shaped only | `shapeup pitches list --status shaped --json` |

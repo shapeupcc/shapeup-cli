@@ -17,6 +17,7 @@ module ShapeupCli
           flags: [
             { name: "status", type: "string", usage: "Filter by status: idea, framed, shaped" },
             { name: "cycle", type: "string", usage: "Filter by cycle ID" },
+            { name: "tag", type: "string", usage: "Filter by tag name" },
             { name: "limit", type: "integer", usage: "Limit number of results" },
             { name: "stream", type: "string", usage: "Stream name or ID (for create)" },
             { name: "appetite", type: "string", usage: "Appetite: unknown, small_batch, big_batch (for create, default: big_batch)" },
@@ -28,6 +29,7 @@ module ShapeupCli
             "shapeup pitches list",
             "shapeup pitches list --status shaped",
             "shapeup pitches list --cycle 5",
+            "shapeup pitches list --tag q3-plan",
             "shapeup pitch 42",
             "shapeup pitch 42 --json",
             "shapeup pitches create \"Redesign Search\" --stream \"Platform\"",
@@ -53,9 +55,11 @@ module ShapeupCli
         def list
           cycle_id = extract_option("--cycle")
           status = extract_option("--status")
+          tag = extract_option("--tag")
           limit = extract_option("--limit")&.to_i
           args = {}
           args[:cycle] = cycle_id if cycle_id
+          args[:tag] = tag if tag
 
           result = call_tool("list_packages", **args)
           data = Output.extract_data(result)
@@ -68,6 +72,7 @@ module ShapeupCli
           summary = "Pitches"
           summary += " (#{status})" if status
           summary += " in cycle #{cycle_id}" if cycle_id
+          summary += " tagged #{tag}" if tag
           summary += " — #{packages.length} results"
 
           render_list(packages, summary)

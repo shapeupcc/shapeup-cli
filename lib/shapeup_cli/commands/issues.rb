@@ -25,6 +25,8 @@ module ShapeupCli
             { name: "watch", short: "Watch an issue", path: "shapeup issues watch <id>" },
             { name: "unwatch", short: "Stop watching an issue", path: "shapeup issues unwatch <id>" },
             { name: "watching", short: "List issues you are watching", path: "shapeup watching" },
+            { name: "convert", short: "Convert issue into a new pitch", path: "shapeup issues convert <id>" },
+            { name: "add-to-pitch", short: "Fold issue content into an existing pitch", path: "shapeup issues add-to-pitch <id> --pitch <pitch_id>" },
             { name: "delete", short: "Delete an issue", path: "shapeup issues delete <id>" }
           ],
           flags: [
@@ -37,6 +39,7 @@ module ShapeupCli
             { name: "all", type: "bool", usage: "Include done/closed issues (hidden by default)" },
             { name: "content", type: "string", usage: "Issue content/description" },
             { name: "title", type: "string", usage: "Issue title (for update)" },
+            { name: "pitch", type: "string", usage: "Pitch ID (for add-to-pitch)" },
             { name: "archived", type: "bool", usage: "Include iceboxed issues in list" },
             { name: "no-comments", type: "bool", usage: "Hide embedded comments on show (default: show)" },
             { name: "comments-limit", type: "integer", usage: "Max comments to embed on show (default: 10, max: 50)" }
@@ -60,7 +63,9 @@ module ShapeupCli
             "shapeup issues assign 42 --user 7",
             "shapeup issues unassign 42",
             "shapeup issues watch 42",
-            "shapeup watching"
+            "shapeup watching",
+            "shapeup issues convert 42",
+            "shapeup issues add-to-pitch 42 --pitch 10"
           ]
         }
       end
@@ -69,22 +74,24 @@ module ShapeupCli
         subcommand = positional_arg(0)
 
         case subcommand
-        when "show"     then show
-        when "create"   then create
-        when "update"   then update
-        when "move"     then move
-        when "done"     then mark_done
-        when "close"    then close
-        when "reopen"   then reopen
-        when "icebox"   then icebox
-        when "defrost"  then defrost
-        when "assign"   then assign
-        when "unassign" then unassign
-        when "watch"    then watch
-        when "unwatch"  then unwatch
-        when "watching" then watching
-        when "delete"   then delete
-        when "list", nil then list
+        when "show"          then show
+        when "create"        then create
+        when "update"        then update
+        when "move"          then move
+        when "done"          then mark_done
+        when "close"         then close
+        when "reopen"        then reopen
+        when "icebox"        then icebox
+        when "defrost"       then defrost
+        when "assign"        then assign
+        when "unassign"      then unassign
+        when "watch"         then watch
+        when "unwatch"       then unwatch
+        when "watching"      then watching
+        when "convert"       then convert
+        when "add-to-pitch"  then add_to_pitch
+        when "delete"        then delete
+        when "list", nil     then list
         else
           # Bare numeric arg = show
           if subcommand&.match?(/\A\d+\z/)
@@ -332,6 +339,32 @@ module ShapeupCli
             summary: "Issue ##{id} deleted",
             breadcrumbs: [
               { cmd: "shapeup issues", description: "List remaining issues" }
+            ]
+        end
+
+        def convert
+          id = positional_arg(1) || abort("Usage: shapeup issues convert <id>")
+
+          result = call_tool("convert_issue_to_pitch", issue: id.to_s)
+
+          render result,
+            summary: "Issue ##{id} converted to a pitch",
+            breadcrumbs: [
+              { cmd: "shapeup pitches", description: "List pitches" },
+              { cmd: "shapeup pitch <id>", description: "Open the new pitch" }
+            ]
+        end
+
+        def add_to_pitch
+          id = positional_arg(1) || abort('Usage: shapeup issues add-to-pitch <id> --pitch <pitch_id>')
+          pitch_id = extract_option("--pitch") || abort('Usage: shapeup issues add-to-pitch <id> --pitch <pitch_id>')
+
+          result = call_tool("add_issue_to_pitch", issue: id.to_s, package: pitch_id.to_s)
+
+          render result,
+            summary: "Issue ##{id} folded into pitch ##{pitch_id}",
+            breadcrumbs: [
+              { cmd: "shapeup pitch #{pitch_id}", description: "Open the pitch" }
             ]
         end
     end
