@@ -24,6 +24,7 @@ module ShapeupCli
           pitches list              List pitches (packages)
           pitches show <id>         Show pitch details with scopes and tasks
           pitch <id>                Shortcut for pitches show
+          pitches create "Title" --stream "Name" [--appetite small_batch] [--cycle-id <id>]
 
         Cycles:
           cycles                    List all cycles
@@ -33,6 +34,7 @@ module ShapeupCli
           scopes list --pitch <id>  List scopes for a pitch
           scopes create --pitch <id> "Title"
           scopes update <id> --title "New title"
+          scopes position <id> <0-100>         Update hill chart position
 
         Tasks:
           tasks list --scope <id>   List tasks for a scope
@@ -139,11 +141,11 @@ module ShapeupCli
         logout         Clear all credentials
         auth           Manage profiles (status, list, switch, remove)
         orgs           List organisations
-        pitches        List/show pitches (list, show)
+        pitches        Manage pitches (list, show, create)
         pitch          Show a pitch (shortcut)
         cycles         List cycles
         cycle          Show cycle details (list, show)
-        scopes         Manage scopes (list, create, update)
+        scopes         Manage scopes (list, create, update, position)
         tasks          Manage tasks (list, create, complete)
         todo           Create a task (shortcut)
         done           Complete task(s) (shortcut)

@@ -4,6 +4,7 @@ require_relative "test_helper"
 
 class SkillDriftTest < Minitest::Test
   SKILL_PATH = File.expand_path("../skills/shapeup/SKILL.md", __dir__)
+  PLUGIN_SKILL_PATH = File.expand_path("../.claude-plugin/skills/shapeup/SKILL.md", __dir__)
 
   def setup
     @skill_content = File.read(SKILL_PATH)
@@ -11,6 +12,16 @@ class SkillDriftTest < Minitest::Test
 
   def test_skill_file_exists
     assert File.exist?(SKILL_PATH), "SKILL.md not found at #{SKILL_PATH}"
+  end
+
+  # The gem ships skills/ (canonical); the Claude Code plugin ships its own
+  # .claude-plugin/skills/ copy. Keep them byte-identical so the plugin never
+  # ships a stale skill — all the checks below then cover both copies.
+  def test_plugin_skill_in_sync_with_canonical
+    assert File.exist?(PLUGIN_SKILL_PATH), "Plugin SKILL.md not found at #{PLUGIN_SKILL_PATH}"
+    assert_equal File.read(SKILL_PATH), File.read(PLUGIN_SKILL_PATH),
+      "Plugin SKILL.md has drifted from the canonical skills/shapeup/SKILL.md. " \
+      "Resync with: cp skills/shapeup/SKILL.md .claude-plugin/skills/shapeup/SKILL.md"
   end
 
   def test_skill_has_yaml_frontmatter

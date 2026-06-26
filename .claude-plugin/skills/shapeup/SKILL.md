@@ -2,7 +2,7 @@
 name: shapeup
 description: |
   Manage ShapeUp via the ShapeUp CLI. Full coverage: pitches, scopes, tasks, cycles,
-  hill charts, assignments, comments, search, tickets, and streams.
+  hill charts, assignments, comments, search, issues, and streams.
   Use for ANY ShapeUp question or action.
 triggers:
   # Direct invocations
@@ -13,14 +13,23 @@ triggers:
   - shapeup scope
   - shapeup task
   - shapeup cycle
-  - shapeup ticket
+  - shapeup issue
+  - shapeup issues
   # Common actions
   - create pitch
   - create scope
   - create task
+  - create issue
   - complete task
   - mark done
-  - move ticket
+  - move issue
+  - icebox issue
+  - defrost issue
+  - assign issue
+  - unassign issue
+  - watch issue
+  - triage
+  - triage issues
   # Shape Up concepts
   - hill chart
   - betting table
@@ -34,6 +43,8 @@ triggers:
   - my scopes
   - assigned to me
   - my pitches
+  - my issues
+  - watched issues
   # Search and discovery
   - search shapeup
   - find in shapeup
@@ -53,246 +64,285 @@ argument-hint: "[action] [args...]"
 
 # /shapeup - ShapeUp Workflow Command
 
-Full CLI coverage: pitches (packages), scopes, tasks, cycles, hill charts, assignments, comments, reactions, search, tickets, streams, and notifications.
+Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns and streams accept names (not just IDs) — use `--column triage`, `--stream "Platform"`, etc.
 
 ## Agent Invariants
 
 **MUST follow these rules:**
 
-1. **Choose the right output mode** — `--json` for full JSON envelope with breadcrumbs; `--md` when presenting to a human; `--agent` for raw data in automation scripts. Piped output auto-switches to `--json`.
-2. **Set organisation context** — most commands require an org. Set once with `shapeup config set org "Name"` or pass `--org <name|id>` per command. Or set `SHAPEUP_ORG` env var.
-3. **Use `--agent --help` for introspection** — returns structured JSON describing any command, its subcommands, flags, and examples. Walk the tree starting from `shapeup --agent --help`.
+0. **Show context first** — before executing any command, run `shapeup config show` and tell the user which organisation and host is active. This avoids confusion when working across multiple orgs.
+1. **Choose the right output mode** — `--json` for chaining and automation; `--md` when presenting results to a human in conversation.
+2. **Set organisation context** — most commands require an org. Set once with `shapeup config set org "Name"` or pass `--org <name|id>` per command. Per-directory config via `shapeup config init "Name"`.
+3. **Use names, not IDs** — columns (`--column triage`), streams (`--stream "Platform"`), and orgs (`--org "Compass Labs"`) all accept names.
 4. **Follow breadcrumbs** — JSON responses include a `breadcrumbs` array with suggested next commands. Use these to chain workflows.
 5. **"Pitch" = "Package" in code** — users say "pitch", the API uses "package". The CLI uses "pitch" everywhere.
-6. **Use 'me' for current user** — `--assignee me` resolves to the authenticated user.
-7. **Check exit codes** — 0=OK, 2=not found, 3=auth error, 4=permission denied, 5=API error, 6=rate limited. Branch on exit code without parsing error text.
+6. **Use 'me' and 'none'** — `--assignee me` for current user, `--assignee none` for unassigned items.
+7. **Check exit codes** — 0=OK, 2=not found, 3=auth error, 4=permission denied, 5=API error. Branch on exit code without parsing error text.
 
 ### Output Modes
 
-| Goal | Flag | Format |
-|------|------|--------|
-| Full JSON with breadcrumbs | `--json` | `{ok, data, summary, breadcrumbs}` |
-| Show results to a user | `--md` / `-m` | Markdown tables |
-| Automation / scripting | `--agent` / `--quiet` | Raw JSON data only |
-| Just the IDs | `--ids-only` | One ID per line |
-| Piped output | _(auto)_ | Auto-switches to `--json` |
-
-Use `--json` when chaining commands (breadcrumbs guide next steps). Use `--agent` for headless scripts. When piping to `jq`, output is JSON automatically — no flag needed.
+| Goal | Flag |
+|------|------|
+| Chain commands / automation | `--json` |
+| Show results to a human | `--md` |
+| Raw data for scripts | `--agent` / `--quiet` |
+| Just IDs | `--ids-only` |
+| Piped output | auto-switches to `--json` |
 
 ### Exit Codes
 
 | Code | Meaning |
 |------|---------|
 | 0 | Success |
-| 1 | Usage error (bad command/flags) |
+| 1 | Usage error |
 | 2 | Not found |
-| 3 | Authentication error |
+| 3 | Auth error |
 | 4 | Permission denied |
 | 5 | API error |
 | 6 | Rate limited |
 | 130 | Interrupted (Ctrl-C) |
 
-### Environment Variables
-
-| Variable | Purpose |
-|----------|---------|
-| `SHAPEUP_TOKEN` | Bearer token (skips OAuth — for CI/scripts) |
-| `SHAPEUP_ORG` | Default organisation ID |
-| `SHAPEUP_HOST` | API host URL (default: https://shapeup.cc) |
-
-### CLI Introspection
-
-Navigate commands with `--agent --help`:
-
-```bash
-shapeup --agent --help
-```
-
-```json
-{"command":"shapeup","version":"0.1.0","short":"...","commands":[...],
- "shortcuts":{...},"inherited_flags":[...]}
-```
-
-Drill into any command:
-
-```bash
-shapeup --agent --help tasks
-```
-
-```json
-{"command":"tasks","path":"shapeup tasks","short":"...","aliases":{"todo":"tasks create","done":"tasks complete"},
- "subcommands":[...],"flags":[...],"examples":[...]}
-```
-
-Walk the tree: start at `shapeup --agent --help` for all commands, then drill into any subcommand.
-
 ## Quick Reference
 
 | Task | Command |
 |------|---------|
-| **Auth** | |
+| **Auth & Context** | |
 | Login | `shapeup login` |
-| Login to local dev | `shapeup login --host http://localhost:3000` |
-| Logout | `shapeup logout` |
-| **Discovery** | |
-| List organisations | `shapeup orgs --json` |
-| Set default org | `shapeup config set org "Org Name"` |
-| Per-directory config | `shapeup config init "Org Name"` |
-| Show config | `shapeup config show` |
+| Auth status | `shapeup auth status` |
+| List orgs | `shapeup orgs --json` |
+| Show current org | `shapeup config show` |
+| Set default org | `shapeup config set org "Compass Labs"` |
+| Per-directory config | `shapeup config init "Compass Labs"` |
+| Install skill | `shapeup setup claude` |
+| **Issues** | |
+| List open issues | `shapeup issues --json` |
+| Include done/closed | `shapeup issues --all --json` |
+| Triage queue | `shapeup issues --column triage --json` |
+| Unassigned triage | `shapeup issues --column triage --assignee none --json` |
+| My issues | `shapeup issues --assignee me --json` |
+| Filter by tag | `shapeup issues --tag seo --json` |
+| Filter by stream | `shapeup issues --stream "Platform" --json` |
+| Show issue detail | `shapeup issue <id> --json` |
+| Create issue | `shapeup issues create "Title" --stream "Platform"` |
+| Move to column | `shapeup issues move <id> --column doing` |
+| Mark issue done | `shapeup issues done <id>` |
+| Close issue (won't fix) | `shapeup issues close <id>` |
+| Reopen issue | `shapeup issues reopen <id>` |
+| Icebox / defrost | `shapeup issues icebox <id>` / `defrost <id>` |
+| Assign to issue | `shapeup issues assign <id>` (self) / `--user <id>` |
+| Unassign from issue | `shapeup issues unassign <id>` (self) / `--user <id>` |
+| Watch / unwatch | `shapeup issues watch <id>` / `unwatch <id>` |
+| My watched issues | `shapeup watching --json` |
+| Convert issue to pitch | `shapeup issues convert <id>` |
+| Fold issue into pitch | `shapeup issues add-to-pitch <id> --pitch <pitch_id>` |
+| **Comments** | |
+| List comments on issue | `shapeup comments list --issue <id> --json` |
+| List comments on pitch | `shapeup comments list --pitch <id> --json` |
+| Add comment to issue | `shapeup comments add --issue <id> "Comment text"` |
+| Add comment to pitch | `shapeup comments add --pitch <id> "Comment text"` |
+| **Checklist** | |
+| List checklist on pitch | `shapeup checklist --pitch <id>` |
+| List checklist on issue | `shapeup checklist --issue <id>` |
+| Add an item | `shapeup checklist add --pitch <id> "Item text"` |
+| Tick / untick an item | `shapeup checklist tick <item_id>` / `untick <item_id>` |
+| Rename an item | `shapeup checklist edit <item_id> "New text"` |
+| Remove an item | `shapeup checklist remove <item_id>` |
+| **Tags** | |
+| List tag vocabulary | `shapeup tags` |
+| Tag a pitch | `shapeup tags add --pitch <id> <name>` |
+| Tag an issue | `shapeup tags add --issue <id> <name>` |
+| Untag | `shapeup tags remove --pitch <id> <name>` |
+| Filter pitches by tag | `shapeup pitches list --tag <name>` |
 | **Pitches** | |
-| List all pitches | `shapeup pitches list --json` |
-| List shaped pitches | `shapeup pitches list --status shaped --json` |
-| List pitches in a cycle | `shapeup pitches list --cycle <id> --json` |
-| Show pitch details | `shapeup pitch <id> --json` |
+| List pitches | `shapeup pitches list --json` |
+| List shaped only | `shapeup pitches list --status shaped --json` |
+| Show pitch detail | `shapeup pitch <id> --json` |
+| Create pitch | `shapeup pitches create "Title" --stream "Name"` |
+| Create with appetite | `shapeup pitches create "Title" --stream "Name" --appetite small_batch` |
 | **Cycles** | |
-| List all cycles | `shapeup cycles --json` |
-| List active cycles | `shapeup cycles --status active --json` |
-| Show cycle details | `shapeup cycle show <id> --json` |
-| **Scopes** | |
-| List scopes for a pitch | `shapeup scopes list --pitch <id> --json` |
-| Create scope | `shapeup scopes create --pitch <id> "Title" --json` |
-| Update scope | `shapeup scopes update <id> --title "New" --json` |
-| **Tasks** | |
-| List tasks for a pitch | `shapeup tasks list --pitch <id> --json` |
-| List tasks for a scope | `shapeup tasks list --scope <id> --json` |
-| List my tasks | `shapeup tasks list --assignee me --json` |
-| Create task | `shapeup todo "Description" --pitch <id> --json` |
-| Create task in scope | `shapeup todo "Description" --pitch <id> --scope <id> --json` |
-| Complete task | `shapeup done <id>` |
-| Complete multiple | `shapeup done <id> <id> <id>` |
+| List cycles | `shapeup cycles --json` |
+| Active cycles | `shapeup cycles --status active --json` |
+| Show cycle | `shapeup cycle show <id> --json` |
+| **Scopes & Tasks** | |
+| List scopes | `shapeup scopes list --pitch <id> --json` |
+| Create scope | `shapeup scopes create --pitch <id> "Title"` |
+| Update hill position | `shapeup scopes position <id> <0-100>` |
+| List tasks | `shapeup tasks list --pitch <id> --json` |
+| Create task | `shapeup todo "Description" --pitch <id>` |
+| Complete task(s) | `shapeup done <id> [<id>...]` |
 | **My Work** | |
-| My assignments | `shapeup me --json` |
-| Someone's work | `shapeup my-work --user <id> --json` |
-| **Search** | |
+| All my assignments | `shapeup me --json` |
+| My work (alias) | `shapeup my-work --json` |
 | Search everything | `shapeup search "query" --json` |
-| **Shortcuts** | |
-| `shapeup pitch <id>` | Same as `shapeup pitches show <id>` |
-| `shapeup cycles` | Same as `shapeup cycle list` |
-| `shapeup todo "..."` | Same as `shapeup tasks create "..."` |
-| `shapeup done <id>` | Same as `shapeup tasks complete <id>` |
-| `shapeup me` | Same as `shapeup my-work` |
+
+## Common Workflows
+
+### Triage Issues
+
+The most common workflow. Review unassigned issues in the triage column.
+
+```bash
+# 1. Check context
+shapeup config show
+
+# 2. Get unassigned triage issues
+shapeup issues --column triage --assignee none --json
+
+# 3. Review the top issue
+shapeup issue <id> --json
+
+# 4. If it has a github_url, check the GitHub issue for more detail
+
+# 5. Search the codebase for related code if it's a bug
+
+# 6. Either:
+#    - Fix it and mark done
+shapeup issues done <id>
+#    - Close it (won't fix)
+shapeup issues close <id>
+#    - Assign to someone
+shapeup issues assign <id> --user <id>
+#    - Icebox if not actionable
+shapeup issues icebox <id>
+#    - Promote to a pitch if it's too big for an issue
+```
+
+### Review a Pitch
+
+```bash
+# Show the pitch with all scopes and tasks
+shapeup pitch <id> --json
+
+# Check scope progress
+shapeup scopes list --pitch <id> --json
+
+# List open tasks
+shapeup tasks list --pitch <id> --json
+```
+
+### Check Cycle Health
+
+```bash
+shapeup cycles --status active --json
+shapeup cycle show <id> --json
+shapeup pitch <id> --json
+```
+
+### Daily Standup
+
+```bash
+shapeup me --md
+shapeup done 123 124 125
+shapeup me --md
+```
+
+### Fix and Close Issue
+
+When you fix a bug or resolve an issue from ShapeUp, close the loop by commenting and marking it done.
+
+```bash
+# 1. Get the commit hash and GitHub remote
+git log --oneline -1
+git remote get-url origin
+
+# 2. Comment on the issue with what was done, linking the commit
+shapeup comments add --issue <id> "Summary of changes. Commit: https://github.com/<owner>/<repo>/commit/<hash> — Resolved by Claude Code."
+
+# 3. Mark the issue done
+shapeup issues done <id>
+```
+
+Always include: what changed, the commit link (full GitHub URL, not markdown — markdown links get escaped), and that it was resolved by Claude Code.
+
+### Create Work
+
+```bash
+# Create a pitch
+shapeup pitches create "Redesign Search" --stream "Platform"
+shapeup pitches create "Auth Overhaul" --stream "Platform" --appetite small_batch
+
+# Add scope to a pitch
+shapeup scopes create --pitch 42 "User onboarding"
+
+# Update hill chart position
+shapeup scopes position 7 50    # peak — fully understood
+shapeup scopes position 7 80    # descending — executing
+
+# Add tasks
+shapeup todo "Design signup flow" --pitch 42 --scope <scope_id>
+
+# Report a bug
+shapeup issues create "Login timeout" --stream "Platform" --kind bug
+```
 
 ## Decision Trees
 
 ### Finding Content
 
 ```
-Need to find something?
-├── My assigned work? → shapeup me --json
-├── Know the pitch? → shapeup pitch <id> --json
-├── List shaped pitches? → shapeup pitches list --status shaped --json
+├── My work? → shapeup me --json
+├── Triage queue? → shapeup issues --column triage --json
+├── Issues I'm watching? → shapeup watching --json
+├── Pitch detail? → shapeup pitch <id> --json
 ├── Cycle progress? → shapeup cycle show <id> --json
-├── Tasks in a scope? → shapeup tasks list --scope <id> --json
-├── Full-text search? → shapeup search "query" --json
-└── Don't know the org? → shapeup orgs --json
+├── Search? → shapeup search "query" --json
+└── Which org? → shapeup config show
 ```
 
-### Modifying Content
+### Acting on Issues
 
 ```
-Want to change something?
-├── Add work to a pitch? → shapeup scopes create --pitch <id> "Title"
-├── Add a task? → shapeup todo "Description" --pitch <id>
-├── Complete a task? → shapeup done <id>
-├── Update a scope? → shapeup scopes update <id> --title "New"
-└── Multiple tasks done? → shapeup done <id1> <id2> <id3>
-```
-
-### Setting Up Context
-
-```
-First time?
-├── shapeup login
-├── shapeup orgs --json  (find your org)
-├── shapeup config set org "Org Name"  (set default)
-└── Now all commands work without --org
-```
-
-## Common Workflows
-
-### Check Cycle Health
-
-```bash
-# Show active cycle with all pitches and progress
-shapeup cycles --status active --json
-# Drill into the cycle
-shapeup cycle show <id> --json
-# Check a specific pitch
-shapeup pitch <id> --json
-```
-
-### Add Work to a Pitch
-
-```bash
-# Create a scope
-shapeup scopes create --pitch 42 "User onboarding" --json
-# Add tasks to the scope (use the scope ID from the response)
-shapeup todo "Design signup flow" --pitch 42 --scope <scope_id>
-shapeup todo "Build email verification" --pitch 42 --scope <scope_id>
-shapeup todo "Write tests" --pitch 42 --scope <scope_id>
-```
-
-### End-of-Day Standup
-
-```bash
-# See all my work
-shapeup me --md
-# Complete finished tasks
-shapeup done 123 124 125
-# Check what's left
-shapeup me --md
-```
-
-### Link Code to ShapeUp
-
-```bash
-# After implementing a feature, complete the task
-shapeup done <task_id>
-# Check remaining work in the scope
-shapeup tasks list --scope <scope_id> --json
+├── Mark issue done → shapeup issues done <id>
+├── Close (won't fix) → shapeup issues close <id>
+├── Reopen → shapeup issues reopen <id>
+├── Move to column → shapeup issues move <id> --column doing
+├── Icebox stale issue → shapeup issues icebox <id>
+├── Defrost from icebox → shapeup issues defrost <id>
+├── Assign to me → shapeup issues assign <id>
+├── Assign to user → shapeup issues assign <id> --user <id>
+├── Unassign me → shapeup issues unassign <id>
+├── Watch for updates → shapeup issues watch <id>
+├── Create new issue → shapeup issues create "Title" --stream "Name"
+└── Triage unassigned → shapeup issues --column triage --assignee none --json
 ```
 
 ## Shape Up Concepts
 
-For agents unfamiliar with Shape Up methodology:
-
-- **Pitch** (Package): A product initiative with a defined appetite. Progresses through: idea → framed → shaped.
-- **Appetite**: Time budget — small batch (1-2 weeks) or big batch (6 weeks). NOT an estimate.
-- **Cycle**: A 6-week development period. Pitches are "bet" on a cycle.
-- **Scope**: A meaningful vertical slice of work within a pitch (1-2 weeks). Max 9 per pitch.
-- **Task**: An individual work item within a scope.
-- **Hill Chart**: Progress tracker. 0-50 = figuring things out (unknown). 50 = peak (understood). 50-100 = execution (known).
-- **Betting Table**: Where shaped pitches are reviewed and assigned to cycles.
-- **Cool-down**: 2-week period after a cycle for bugs, exploration, prep.
+- **Pitch** (Package): Product initiative. Progresses: idea → framed → shaped.
+- **Appetite**: Time budget (1 week, 2 weeks, 6 weeks). NOT an estimate.
+- **Cycle**: 6-week development period. Pitches are "bet" on a cycle.
+- **Scope**: Vertical slice of work within a pitch (1-2 weeks). Max 9 per pitch.
+- **Task**: Individual work item within a scope.
+- **Hill Chart**: Progress tracker. 0-50 = unknown, 50 = peak, 50-100 = known.
+- **Issue**: Bug or small request. Managed on a kanban board. Mark as done or closed when resolved.
+- **Icebox**: Archive for stale issues. Auto-archives after 30 days of inactivity.
+- **Horizon**: Speculative planning view for future cycles.
 
 ## Configuration
 
-### Global Config
-
-Stored in `~/.config/shapeup/config.json`:
-
-```bash
-shapeup config set org "Acme Corp"   # Set default org (name or ID)
-shapeup config set host https://shapeup.cc  # Set host
-```
-
-### Per-Directory Config
-
-Creates `.shapeup/config.json` in the current directory:
-
-```bash
-shapeup config init "Acme Corp"
-```
-
 ### Resolution Order
 
-`--org` flag > `.shapeup/config.json` > `~/.config/shapeup/config.json`
+`--org` flag > `.shapeup/config.json` (per-directory) > `~/.config/shapeup/config.json` (global)
 
-### Organisation Names
-
-`--org` accepts both IDs and names (case-insensitive exact match):
+### Per-Directory Config (Recommended)
 
 ```bash
-shapeup pitches list --org "Acme Corp" --json
-shapeup pitches list --org 42 --json
+shapeup config init "Compass Labs"
 ```
+
+Creates `.shapeup/config.json` in the current directory. All commands in this directory use this org.
+
+### Global Config
+
+```bash
+shapeup config set org "Compass Labs"
+shapeup config set host https://shapeup.cc
+```
+
+### Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `SHAPEUP_TOKEN` | Bearer token (skips OAuth) |
+| `SHAPEUP_ORG` | Default organisation ID |
+| `SHAPEUP_HOST` | API host URL (default: https://shapeup.cc) |
