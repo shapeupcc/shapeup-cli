@@ -33,6 +33,7 @@ module ShapeupCli
     "orgs"      => Commands::Orgs,
     "pitches"   => Commands::Pitches,
     "cycle"     => Commands::Cycle,
+    "streams"   => Commands::Streams,
     "scopes"    => Commands::Scopes,
     "tasks"     => Commands::Tasks,
     "issues"    => Commands::Issues,
@@ -71,10 +72,12 @@ module ShapeupCli
     when "pitch"          then Commands::Pitches.run(["show"] + args)
     when "cycle"          then Commands::Cycle.run(args)
     when "cycles"         then Commands::Cycle.run(["list"] + args)
+    when "streams"        then Commands::Streams.run(args)
     when "scopes"         then Commands::Scopes.run(args)
     when "tasks"          then Commands::Tasks.run(args)
     when "todo"           then Commands::Tasks.run(["create"] + args)
     when "done"           then Commands::Tasks.run(["complete"] + args)
+    when "undone"         then Commands::Tasks.run(["uncomplete"] + args)
     when "issues"         then Commands::Issues.run(args)
     when "issue"          then Commands::Issues.run(["show"] + args)
     when "watching"       then Commands::Issues.run(["watching"] + args)
@@ -126,6 +129,7 @@ module ShapeupCli
         "cycles" => "cycle list",
         "todo \"...\"" => "tasks create \"...\"",
         "done <id>" => "tasks complete <id>",
+        "undone <id>" => "tasks uncomplete <id>",
         "issue <id>" => "issues show <id>",
         "watching" => "issues watching",
         "me" => "my-work"

@@ -25,21 +25,34 @@ module ShapeupCli
           pitches show <id>         Show pitch details with scopes and tasks
           pitch <id>                Shortcut for pitches show
           pitches create "Title" --stream "Name" [--appetite small_batch] [--cycle-id <id>]
+          pitches update <id> [--title|--status|--appetite|--stream|--content|--cycle ...]
+          pitches extend <id> --predecessor <id>   Continue a previous pitch
+          pitches detach <id>       Remove the predecessor link
+          pitches delete <id>       Delete a pitch (asks to confirm; --yes to skip)
 
         Cycles:
           cycles                    List all cycles
           cycle show <id>           Show cycle details with pitches and progress
+
+        Streams:
+          streams                   List streams (product areas)
+          streams --all             Include archived streams
+          streams show <id>         Show stream details
 
         Scopes:
           scopes list --pitch <id>  List scopes for a pitch
           scopes create --pitch <id> "Title"
           scopes update <id> --title "New title"
           scopes position <id> <0-100>         Update hill chart position
+          scopes delete <id>        Delete a scope (asks to confirm; --yes to skip)
 
         Tasks:
           tasks list --scope <id>   List tasks for a scope
           todo "Description" --pitch <id> [--scope <id>]
           done <id> [<id>...]       Mark task(s) as complete
+          undone <id>               Mark a task as incomplete
+          tasks update <id> [--description "New"] [--scope <id>|none]
+          tasks delete <id>         Delete a task (asks to confirm; --yes to skip)
 
         Issues:
           issues                    List open issues
@@ -63,7 +76,7 @@ module ShapeupCli
           issues watch <id>         Watch an issue
           issues unwatch <id>       Stop watching
           watching                  List issues you are watching
-          issues delete <id>        Delete an issue
+          issues delete <id>        Delete an issue (asks to confirm; --yes to skip)
           issues convert <id>       Convert issue to a new pitch
           issues add-to-pitch <id> --pitch <pid>
                                     Fold issue into an existing pitch
@@ -73,6 +86,8 @@ module ShapeupCli
           comments list --pitch <id>           List comments on a pitch
           comments add --issue <id> "Text"     Add a comment to an issue
           comments add --pitch <id> "Text"     Add a comment to a pitch
+          comments edit <comment_id> "Text"    Edit your own comment
+          comments remove <comment_id>         Delete your own comment (asks to confirm)
 
         Checklist:
           checklist --pitch <id>               List the checklist on a pitch
@@ -118,6 +133,8 @@ module ShapeupCli
         Flags:
           --org <id|name>           Override default organisation
           --host <url>              Override ShapeUp host (default: https://shapeup.cc)
+          --yes, -y                 Skip the confirmation prompt on delete commands
+                                    (required when deleting non-interactively)
 
         Environment variables:
           SHAPEUP_TOKEN             Bearer token (skips OAuth, for CI/scripts)
@@ -141,18 +158,20 @@ module ShapeupCli
         logout         Clear all credentials
         auth           Manage profiles (status, list, switch, remove)
         orgs           List organisations
-        pitches        Manage pitches (list, show, create)
+        pitches        Manage pitches (list, show, create, update, extend, detach, delete)
         pitch          Show a pitch (shortcut)
         cycles         List cycles
         cycle          Show cycle details (list, show)
-        scopes         Manage scopes (list, create, update, position)
-        tasks          Manage tasks (list, create, complete)
+        streams        List/show streams (list, show)
+        scopes         Manage scopes (list, create, update, position, delete)
+        tasks          Manage tasks (list, create, complete, uncomplete, update, delete)
         todo           Create a task (shortcut)
         done           Complete task(s) (shortcut)
-        issues         Manage issues (list, show, create, move, icebox, watch, convert, add-to-pitch)
+        undone         Mark a task incomplete (shortcut)
+        issues         Manage issues (list, show, create, move, icebox, watch, convert, add-to-pitch, delete)
         issue          Show an issue (shortcut)
         watching       List watched issues (shortcut)
-        comments       List and add comments (list, add)
+        comments       Manage comments (list, add, edit, remove)
         checklist      Manage checklist items on pitches/issues (list, add, tick, untick, edit, remove)
         tags           List/add/remove tags on pitches and issues
         my-work / me   Show my assigned work
@@ -173,6 +192,7 @@ require_relative "commands/logout"
 require_relative "commands/orgs"
 require_relative "commands/pitches"
 require_relative "commands/cycle"
+require_relative "commands/streams"
 require_relative "commands/scopes"
 require_relative "commands/tasks"
 require_relative "commands/issues"

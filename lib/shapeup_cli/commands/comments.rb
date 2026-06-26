@@ -10,7 +10,9 @@ module ShapeupCli
           short: "List and add comments on issues, pitches, scopes, and tasks",
           subcommands: [
             { name: "list", short: "List comments", path: "shapeup comments list --issue <id>" },
-            { name: "add", short: "Add a comment", path: 'shapeup comments add --issue <id> "Comment text"' }
+            { name: "add", short: "Add a comment", path: 'shapeup comments add --issue <id> "Comment text"' },
+            { name: "edit", short: "Edit your own comment", path: 'shapeup comments edit <comment_id> "New text"' },
+            { name: "remove", short: "Delete your own comment", path: "shapeup comments remove <comment_id>" }
           ],
           flags: [
             { name: "issue", type: "string", usage: "Issue ID" },
@@ -22,7 +24,9 @@ module ShapeupCli
             "shapeup comments list --issue 42",
             'shapeup comments add --issue 42 "Investigated — this is a CSS issue in the navbar"',
             "shapeup comments list --pitch 10",
-            'shapeup comments add --pitch 10 "Shaped and ready for betting"'
+            'shapeup comments add --pitch 10 "Shaped and ready for betting"',
+            'shapeup comments edit 88 "Updated: this is a navbar z-index issue"',
+            "shapeup comments remove 88"
           ]
         }
       end
@@ -32,6 +36,8 @@ module ShapeupCli
 
         case subcommand
         when "add"    then add
+        when "edit"   then edit
+        when "remove" then remove
         when "list", nil then list
         else list
         end
@@ -61,6 +67,25 @@ module ShapeupCli
             breadcrumbs: [
               { cmd: "shapeup comments list --#{type.downcase} #{id}", description: "View all comments" }
             ]
+        end
+
+        def edit
+          comment_id = positional_arg(1) || abort('Usage: shapeup comments edit <comment_id> "New text"')
+          text = positional_arg(2) || abort('Usage: shapeup comments edit <comment_id> "New text"')
+
+          result = call_tool("update_comment", comment_id: comment_id.to_s, content: text)
+
+          render result, summary: "Comment ##{comment_id} updated"
+        end
+
+        def remove
+          yes = assume_yes?
+          comment_id = positional_arg(1) || abort("Usage: shapeup comments remove <comment_id> [--yes]")
+          confirm_destructive!("Delete comment ##{comment_id}", yes)
+
+          result = call_tool("delete_comment", comment_id: comment_id.to_s)
+
+          render result, summary: "Comment ##{comment_id} deleted"
         end
 
         def resolve_commentable

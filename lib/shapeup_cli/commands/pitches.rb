@@ -12,16 +12,23 @@ module ShapeupCli
             { name: "list", short: "List pitches (default)", path: "shapeup pitches list" },
             { name: "show", short: "Show pitch details with scopes and tasks", path: "shapeup pitches show <id>" },
             { name: "create", short: "Create a new pitch", path: "shapeup pitches create \"Title\" --stream \"Name\"" },
+            { name: "update", short: "Update a pitch's title, status, appetite, stream, or cycle", path: "shapeup pitches update <id> --status shaped" },
+            { name: "extend", short: "Link a pitch as a continuation of a predecessor", path: "shapeup pitches extend <id> --predecessor <id>" },
+            { name: "detach", short: "Remove a pitch's predecessor link", path: "shapeup pitches detach <id>" },
+            { name: "delete", short: "Delete a pitch (must have no scopes)", path: "shapeup pitches delete <id>" },
             { name: "help", short: "Show usage", path: "shapeup pitches help" }
           ],
           flags: [
-            { name: "status", type: "string", usage: "Filter by status: idea, framed, shaped" },
-            { name: "cycle", type: "string", usage: "Filter by cycle ID" },
+            { name: "status", type: "string", usage: "Filter by, or set, status: idea, framed, shaped" },
+            { name: "cycle", type: "string", usage: "Filter by cycle ID (list), or assign to cycle ID (update)" },
             { name: "tag", type: "string", usage: "Filter by tag name" },
             { name: "limit", type: "integer", usage: "Limit number of results" },
-            { name: "stream", type: "string", usage: "Stream name or ID (for create)" },
-            { name: "appetite", type: "string", usage: "Appetite: unknown, small_batch, big_batch (for create, default: big_batch)" },
+            { name: "stream", type: "string", usage: "Stream name or ID (for create/update)" },
+            { name: "appetite", type: "string", usage: "Appetite: unknown, small_batch, big_batch (create default: big_batch)" },
             { name: "cycle-id", type: "string", usage: "Assign to cycle ID (for create)" },
+            { name: "title", type: "string", usage: "New title (for update)" },
+            { name: "content", type: "string", usage: "New description (for update)" },
+            { name: "predecessor", type: "string", usage: "Predecessor pitch ID (for extend)" },
             { name: "no-comments", type: "bool", usage: "Hide embedded comments on show (default: show)" },
             { name: "comments-limit", type: "integer", usage: "Max comments to embed on show (default: 10, max: 50)" }
           ],
@@ -33,7 +40,13 @@ module ShapeupCli
             "shapeup pitch 42",
             "shapeup pitch 42 --json",
             "shapeup pitches create \"Redesign Search\" --stream \"Platform\"",
-            "shapeup pitches create \"Auth Overhaul\" --stream \"Platform\" --appetite small_batch"
+            "shapeup pitches create \"Auth Overhaul\" --stream \"Platform\" --appetite small_batch",
+            "shapeup pitches update 42 --status shaped",
+            "shapeup pitches update 42 --title \"Redesign Search v2\" --appetite small_batch",
+            "shapeup pitches update 42 --cycle 5",
+            "shapeup pitches extend 42 --predecessor 30",
+            "shapeup pitches detach 42",
+            "shapeup pitches delete 42"
           ]
         }
       end
@@ -44,6 +57,10 @@ module ShapeupCli
         case subcommand
         when "show"      then show
         when "create"    then create
+        when "update"    then update
+        when "extend"    then extend_pitch
+        when "detach"    then detach
+        when "delete"    then delete
         when "list", nil then list
         when "help"      then help
         else
@@ -137,6 +154,68 @@ module ShapeupCli
               { cmd: "shapeup scopes create --pitch <id> \"Title\"", description: "Add a scope" },
               { cmd: "shapeup todo \"Task\" --pitch <id>", description: "Add a task" },
               { cmd: "shapeup pitch <id>", description: "View pitch details" }
+            ]
+        end
+
+        def update
+          id = positional_arg(1) || abort("Usage: shapeup pitches update <id> [--title \"...\"] [--status idea|framed|shaped] [--appetite ...] [--stream \"Name\"] [--content \"...\"] [--cycle <id>]")
+
+          args = { package: id.to_s }
+          args[:title] = extract_option("--title") if @remaining.include?("--title")
+          args[:status] = extract_option("--status") if @remaining.include?("--status")
+          args[:appetite] = extract_option("--appetite") if @remaining.include?("--appetite")
+          args[:stream] = extract_option("--stream") if @remaining.include?("--stream")
+          args[:content] = extract_option("--content") if @remaining.include?("--content")
+          args[:cycle] = extract_option("--cycle") if @remaining.include?("--cycle")
+
+          abort("Nothing to update. Pass at least one of --title, --status, --appetite, --stream, --content, --cycle") if args.size == 1
+
+          result = call_tool("update_package", **args)
+
+          render result,
+            summary: "Pitch ##{id} updated",
+            breadcrumbs: [
+              { cmd: "shapeup pitch #{id}", description: "View pitch details" }
+            ]
+        end
+
+        def extend_pitch
+          id = positional_arg(1) || abort("Usage: shapeup pitches extend <id> --predecessor <id>")
+          predecessor = extract_option("--predecessor") || abort("Usage: shapeup pitches extend <id> --predecessor <id>")
+
+          result = call_tool("extend_package", package: id.to_s, predecessor: predecessor.to_s)
+
+          render result,
+            summary: "Pitch ##{id} now extends ##{predecessor}",
+            breadcrumbs: [
+              { cmd: "shapeup pitch #{id}", description: "View pitch details" },
+              { cmd: "shapeup pitches detach #{id}", description: "Remove the predecessor link" }
+            ]
+        end
+
+        def detach
+          id = positional_arg(1) || abort("Usage: shapeup pitches detach <id>")
+
+          result = call_tool("detach_package", package: id.to_s)
+
+          render result,
+            summary: "Pitch ##{id} detached from its predecessor",
+            breadcrumbs: [
+              { cmd: "shapeup pitch #{id}", description: "View pitch details" }
+            ]
+        end
+
+        def delete
+          yes = assume_yes?
+          id = positional_arg(1) || abort("Usage: shapeup pitches delete <id> [--yes]")
+          confirm_destructive!("Delete pitch ##{id}", yes)
+
+          result = call_tool("delete_package", package: id.to_s)
+
+          render result,
+            summary: "Pitch ##{id} deleted",
+            breadcrumbs: [
+              { cmd: "shapeup pitches list", description: "List remaining pitches" }
             ]
         end
 

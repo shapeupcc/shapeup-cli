@@ -331,7 +331,9 @@ module ShapeupCli
         end
 
         def delete
-          id = positional_arg(1) || abort("Usage: shapeup issues delete <id>")
+          yes = assume_yes?
+          id = positional_arg(1) || abort("Usage: shapeup issues delete <id> [--yes]")
+          confirm_destructive!("Delete issue ##{id}", yes)
 
           result = call_tool("delete_issue", issue: id.to_s)
 

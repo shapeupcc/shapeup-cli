@@ -78,6 +78,7 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 5. **"Pitch" = "Package" in code** — users say "pitch", the API uses "package". The CLI uses "pitch" everywhere.
 6. **Use 'me' and 'none'** — `--assignee me` for current user, `--assignee none` for unassigned items.
 7. **Check exit codes** — 0=OK, 2=not found, 3=auth error, 4=permission denied, 5=API error. Branch on exit code without parsing error text.
+8. **Deletes need confirmation** — `delete`/`remove` commands (pitches, scopes, tasks, issues, comments) prompt `[y/N]` interactively and **refuse when run non-interactively** unless you pass `--yes` (or `-y`). As an agent you have no TTY, so add `--yes` only after you have confirmed the deletion is intended.
 
 ### Output Modes
 
@@ -140,6 +141,8 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | List comments on pitch | `shapeup comments list --pitch <id> --json` |
 | Add comment to issue | `shapeup comments add --issue <id> "Comment text"` |
 | Add comment to pitch | `shapeup comments add --pitch <id> "Comment text"` |
+| Edit your comment | `shapeup comments edit <comment_id> "New text"` |
+| Delete your comment | `shapeup comments remove <comment_id> --yes` |
 | **Checklist** | |
 | List checklist on pitch | `shapeup checklist --pitch <id>` |
 | List checklist on issue | `shapeup checklist --issue <id>` |
@@ -159,17 +162,29 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | Show pitch detail | `shapeup pitch <id> --json` |
 | Create pitch | `shapeup pitches create "Title" --stream "Name"` |
 | Create with appetite | `shapeup pitches create "Title" --stream "Name" --appetite small_batch` |
+| Update pitch | `shapeup pitches update <id> --status shaped` |
+| Extend a pitch | `shapeup pitches extend <id> --predecessor <id>` |
+| Detach predecessor | `shapeup pitches detach <id>` |
+| Delete pitch | `shapeup pitches delete <id> --yes` |
 | **Cycles** | |
 | List cycles | `shapeup cycles --json` |
 | Active cycles | `shapeup cycles --status active --json` |
 | Show cycle | `shapeup cycle show <id> --json` |
+| **Streams** | |
+| List streams | `shapeup streams --json` |
+| Include archived | `shapeup streams --all --json` |
+| Show stream | `shapeup streams show <id> --json` |
 | **Scopes & Tasks** | |
 | List scopes | `shapeup scopes list --pitch <id> --json` |
 | Create scope | `shapeup scopes create --pitch <id> "Title"` |
 | Update hill position | `shapeup scopes position <id> <0-100>` |
+| Delete scope | `shapeup scopes delete <id> --yes` |
 | List tasks | `shapeup tasks list --pitch <id> --json` |
 | Create task | `shapeup todo "Description" --pitch <id>` |
 | Complete task(s) | `shapeup done <id> [<id>...]` |
+| Uncomplete task | `shapeup undone <id>` |
+| Update task | `shapeup tasks update <id> --description "New"` |
+| Delete task | `shapeup tasks delete <id> --yes` |
 | **My Work** | |
 | All my assignments | `shapeup me --json` |
 | My work (alias) | `shapeup my-work --json` |

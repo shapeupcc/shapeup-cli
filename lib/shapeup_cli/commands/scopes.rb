@@ -12,7 +12,8 @@ module ShapeupCli
             { name: "list", short: "List scopes for a pitch", path: "shapeup scopes list --pitch <id>" },
             { name: "create", short: "Create a new scope", path: "shapeup scopes create --pitch <id> \"Title\"" },
             { name: "update", short: "Update scope title or color", path: "shapeup scopes update <id> --title \"New\"" },
-            { name: "position", short: "Update hill chart position (0-100)", path: "shapeup scopes position <id> <position>" }
+            { name: "position", short: "Update hill chart position (0-100)", path: "shapeup scopes position <id> <position>" },
+            { name: "delete", short: "Delete a scope (must have no tasks or comments)", path: "shapeup scopes delete <id>" }
           ],
           flags: [
             { name: "pitch", type: "string", usage: "Pitch ID (required for list and create)" },
@@ -23,7 +24,8 @@ module ShapeupCli
             "shapeup scopes list --pitch 42",
             "shapeup scopes create --pitch 42 \"User onboarding\"",
             "shapeup scopes update 7 --title \"Revised onboarding\"",
-            "shapeup scopes position 7 50"
+            "shapeup scopes position 7 50",
+            "shapeup scopes delete 7"
           ]
         }
       end
@@ -35,6 +37,7 @@ module ShapeupCli
         when "create"   then create
         when "update"   then update
         when "position" then position
+        when "delete"   then delete
         when "list", nil then list
         else list
         end
@@ -90,6 +93,20 @@ module ShapeupCli
           result = call_tool("update_scope", **args)
 
           render result, summary: "Scope ##{scope_id} updated"
+        end
+
+        def delete
+          yes = assume_yes?
+          scope_id = positional_arg(1) || abort("Usage: shapeup scopes delete <id> [--yes]")
+          confirm_destructive!("Delete scope ##{scope_id}", yes)
+
+          result = call_tool("delete_scope", scope: scope_id.to_s)
+
+          render result,
+            summary: "Scope ##{scope_id} deleted",
+            breadcrumbs: [
+              { cmd: "shapeup scopes list --pitch <id>", description: "List remaining scopes" }
+            ]
         end
     end
   end

@@ -114,6 +114,29 @@ module ShapeupCli
           !!@remaining.delete(flag)
         end
 
+        # Consume a confirmation bypass flag (--yes / -y). Call before reading
+        # positionals so the flag isn't mistaken for one.
+        def assume_yes?
+          # both forms; -y does not start with "--" so it must be consumed explicitly
+          consume_flag("--yes") | consume_flag("-y")
+        end
+
+        # Guard a destructive action. `assume_yes` skips the prompt (the caller
+        # passes the result of assume_yes?). With a TTY we ask for confirmation;
+        # without one we refuse rather than delete unattended — so agents and
+        # scripts must opt in explicitly with --yes.
+        def confirm_destructive!(action, assume_yes)
+          return if assume_yes
+
+          unless $stdin.tty?
+            abort "Refusing to #{action} without confirmation. Re-run with --yes to proceed."
+          end
+
+          $stderr.print "#{action}? This cannot be undone [y/N]: "
+          answer = $stdin.gets&.strip&.downcase
+          abort "Aborted." unless answer == "y" || answer == "yes"
+        end
+
         # Parse --comments/--no-comments + --comments-limit N into MCP args.
         def comment_flags
           args = {}
