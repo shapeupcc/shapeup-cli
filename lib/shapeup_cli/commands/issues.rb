@@ -358,8 +358,8 @@ module ShapeupCli
         end
 
         def add_to_pitch
-          id = positional_arg(1) || abort('Usage: shapeup issues add-to-pitch <id> --pitch <pitch_id>')
-          pitch_id = extract_option("--pitch") || abort('Usage: shapeup issues add-to-pitch <id> --pitch <pitch_id>')
+          id = positional_arg(1) || abort("Usage: shapeup issues add-to-pitch <id> --pitch <pitch_id>")
+          pitch_id = extract_option("--pitch") || abort("Usage: shapeup issues add-to-pitch <id> --pitch <pitch_id>")
 
           result = call_tool("add_issue_to_pitch", issue: id.to_s, package: pitch_id.to_s)
 

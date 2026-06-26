@@ -1,0 +1,12 @@
+# Omakase Ruby styling — kept in sync with the parent ShapeUp app.
+# The codebase is written in this style (double quotes, private methods
+# indented under `private`); inheriting omakase means rubocop agrees with
+# it instead of rewriting it.
+inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+
+AllCops:
+  TargetRubyVersion: 3.1
+  Exclude:
+    - "*.gem"
+    - ".ruby-lsp/**/*"
+    - "vendor/**/*"

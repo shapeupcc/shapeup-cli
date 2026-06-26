@@ -92,7 +92,7 @@ module ShapeupCli
       when Hash
         render_markdown_hash(data)
       else
-        puts data.to_s
+        puts data
       end
     end
 
@@ -106,7 +106,7 @@ module ShapeupCli
       when Hash
         render_styled_hash(data)
       else
-        puts data.to_s
+        puts data
       end
 
       if breadcrumbs.any?
@@ -177,7 +177,7 @@ module ShapeupCli
       when Hash
         id = value["id"]
         label = value["title"] || value["name"] || value["description"]
-        [id, label].compact.join("  ")
+        [ id, label ].compact.join("  ")
       else
         value.to_s
       end

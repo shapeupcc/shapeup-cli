@@ -181,7 +181,7 @@ class CommandsTest < Minitest::Test
   end
 
   def test_tasks_update_description_and_scope
-    calls = capture_calls(ShapeupCli::Commands::Tasks, ["update", "9", "--description", "New text", "--scope", "3"])
+    calls = capture_calls(ShapeupCli::Commands::Tasks, [ "update", "9", "--description", "New text", "--scope", "3" ])
     assert_equal [ [ "update_task", { task: "9", description: "New text", scope: "3" } ] ], calls
   end
 
@@ -197,7 +197,7 @@ class CommandsTest < Minitest::Test
   end
 
   def test_pitches_update
-    calls = capture_calls(ShapeupCli::Commands::Pitches, ["update", "42", "--status", "shaped", "--appetite", "small_batch"])
+    calls = capture_calls(ShapeupCli::Commands::Pitches, [ "update", "42", "--status", "shaped", "--appetite", "small_batch" ])
     assert_equal [ [ "update_package", { package: "42", status: "shaped", appetite: "small_batch" } ] ], calls
   end
 
@@ -224,7 +224,7 @@ class CommandsTest < Minitest::Test
   end
 
   def test_comments_edit
-    calls = capture_calls(ShapeupCli::Commands::Comments, ["edit", "88", "Updated text"])
+    calls = capture_calls(ShapeupCli::Commands::Comments, [ "edit", "88", "Updated text" ])
     assert_equal [ [ "update_comment", { comment_id: "88", content: "Updated text" } ] ], calls
   end
 

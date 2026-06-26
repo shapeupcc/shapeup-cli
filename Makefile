@@ -1,9 +1,14 @@
-.PHONY: test check syntax sync-skill
+.PHONY: test check syntax lint sync-skill
 
 test:
 	@for f in test/*_test.rb; do ruby -Ilib -Itest "$$f" || exit 1; done
 
 check: syntax test
+
+# Omakase style (matches the parent ShapeUp app). Needs the dev gem:
+#   bundle install
+lint:
+	@bundle exec rubocop
 
 # Resync the plugin's skill copy with the canonical (gem-shipped) one.
 # The two are kept byte-identical; skill_drift_test.rb enforces it.
