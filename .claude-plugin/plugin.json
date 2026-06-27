@@ -1,6 +1,6 @@
 {
   "name": "shapeup",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "ShapeUp integration for Claude Code. Manage pitches, scopes, tasks, cycles, and track Shape Up progress.",
   "author": {
     "name": "ShapeUp",

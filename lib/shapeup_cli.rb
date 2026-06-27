@@ -16,7 +16,7 @@ require_relative "shapeup_cli/output"
 require_relative "shapeup_cli/commands"
 
 module ShapeupCli
-  VERSION = "0.3.4"
+  VERSION = "0.4.0"
   DEFAULT_HOST = "https://shapeup.cc"
 
   # Exit codes
