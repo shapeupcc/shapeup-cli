@@ -125,6 +125,7 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | Filter by stream | `shapeup issues --stream "Platform" --json` |
 | Show issue detail | `shapeup issue <id> --json` |
 | Create issue | `shapeup issues create "Title" --stream "Platform"` |
+| List kanban columns | `shapeup issues columns --json` |
 | Move to column | `shapeup issues move <id> --column doing` |
 | Mark issue done | `shapeup issues done <id>` |
 | Close issue (won't fix) | `shapeup issues close <id>` |
@@ -166,25 +167,38 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | Extend a pitch | `shapeup pitches extend <id> --predecessor <id>` |
 | Detach predecessor | `shapeup pitches detach <id>` |
 | Delete pitch | `shapeup pitches delete <id> --yes` |
+| Assign to pitch | `shapeup pitches assign <id>` (self) / `--user <id>` |
+| Unassign from pitch | `shapeup pitches unassign <id>` (self) / `--user <id>` |
 | **Cycles** | |
 | List cycles | `shapeup cycles --json` |
 | Active cycles | `shapeup cycles --status active --json` |
 | Show cycle | `shapeup cycle show <id> --json` |
+| Create cycle | `shapeup cycle create "Q3" --start 2026-07-01 --end 2026-08-12` |
+| Edit cycle | `shapeup cycle edit <id> --title "New" --end 2026-08-19` |
+| Delete cycle | `shapeup cycle delete <id> --yes` |
 | **Streams** | |
 | List streams | `shapeup streams --json` |
 | Include archived | `shapeup streams --all --json` |
 | Show stream | `shapeup streams show <id> --json` |
+| Create stream | `shapeup streams create "Platform" --description "..."` |
+| Edit stream | `shapeup streams edit <id> --title "New" --color "#3b82f6"` |
 | **Scopes & Tasks** | |
 | List scopes | `shapeup scopes list --pitch <id> --json` |
+| Show scope + tasks | `shapeup scopes show <id> --json` |
 | Create scope | `shapeup scopes create --pitch <id> "Title"` |
 | Update hill position | `shapeup scopes position <id> <0-100>` |
+| Hill chart history | `shapeup scopes history <id> --json` |
 | Delete scope | `shapeup scopes delete <id> --yes` |
+| Assign to scope | `shapeup scopes assign <id>` (self) / `--user <id>` |
+| Unassign from scope | `shapeup scopes unassign <id>` (self) / `--user <id>` |
 | List tasks | `shapeup tasks list --pitch <id> --json` |
 | Create task | `shapeup todo "Description" --pitch <id>` |
 | Complete task(s) | `shapeup done <id> [<id>...]` |
 | Uncomplete task | `shapeup undone <id>` |
 | Update task | `shapeup tasks update <id> --description "New"` |
 | Delete task | `shapeup tasks delete <id> --yes` |
+| Assign to task | `shapeup tasks assign <id>` (self) / `--user <id>` |
+| Unassign from task | `shapeup tasks unassign <id>` (self) / `--user <id>` |
 | **My Work** | |
 | All my assignments | `shapeup me --json` |
 | My work (alias) | `shapeup my-work --json` |
