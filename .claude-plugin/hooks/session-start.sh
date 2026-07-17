@@ -27,9 +27,11 @@ fi
 # Check auth status
 auth_json=$($SHAPEUP_CMD auth status --json 2>/dev/null || echo '{"data":{"authenticated":false}}')
 
-# Parse without jq dependency
-if echo "$auth_json" | grep -q '"authenticated":true' 2>/dev/null; then
-  profile=$($SHAPEUP_CMD config show 2>/dev/null | head -3 | tail -1 | sed 's/.*active  //' || echo "default")
+# Parse without a jq dependency. The output is pretty-printed JSON, so
+# match "authenticated": true with optional whitespace after the colon.
+if echo "$auth_json" | grep -qE '"authenticated": *true' 2>/dev/null; then
+  profile=$(echo "$auth_json" | grep -oE '"profile": *"[^"]*"' | head -1 | sed -E 's/.*: *"([^"]*)"/\1/')
+  [ -z "$profile" ] && profile="default"
   cat << EOF
 <hook-output>
 ShapeUp plugin active — authenticated (profile: ${profile}).
