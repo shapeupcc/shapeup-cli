@@ -17,29 +17,10 @@ module ShapeupCli
       @request_id = 0
     end
 
-    # Initialise the MCP session
-    def initialize_session
-      call_method("initialize", protocolVersion: MCP_PROTOCOL_VERSION)
-    end
-
-    # List available tools (useful for --agent --help introspection)
-    def list_tools
-      call_method("tools/list")
-    end
-
-    # Call an MCP tool by name with arguments
+    # Call an MCP tool by name with arguments. The only method the CLI uses —
+    # the MCP session/introspection/resource calls were never wired up.
     def call_tool(name, **arguments)
       call_method("tools/call", name: name, arguments: arguments)
-    end
-
-    # List available resources
-    def list_resources
-      call_method("resources/list")
-    end
-
-    # Read a resource by URI
-    def read_resource(uri)
-      call_method("resources/read", uri: uri)
     end
 
     private
