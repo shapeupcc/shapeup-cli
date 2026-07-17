@@ -44,7 +44,7 @@ module ShapeupCli
 
           case key
           when "org"
-            resolved = resolve_org_value(value)
+            resolved = resolve_org(value)
             Config.save_config("organisation_id", resolved.to_s)
             puts "Default organisation set to #{resolved}"
           when "host"
@@ -113,30 +113,12 @@ module ShapeupCli
           org_value = positional_arg(1) || extract_option("--org") || @org_id
           abort("Usage: shapeup config init <org>") unless org_value
 
-          resolved = resolve_org_value(org_value)
+          resolved = resolve_org(org_value)
 
           FileUtils.mkdir_p(".shapeup")
           File.write(".shapeup/config.json", JSON.pretty_generate(organisation_id: resolved.to_s))
           puts "Created .shapeup/config.json (org: #{resolved})"
           puts "All commands in this directory will use this organisation by default."
-        end
-
-        def resolve_org_value(value)
-          return value if value.to_s.match?(/\A\d+\z/)
-
-          # Need to resolve name to ID
-          result = client.call_tool("list_organisations")
-          data = Output.extract_data(result)
-          orgs = data.is_a?(Hash) ? (data["organisations"] || []) : Array(data)
-
-          match = orgs.find { |o| o["name"]&.downcase == value.downcase }
-
-          if match
-            match["id"]
-          else
-            names = orgs.map { |o| "  #{o["id"]}  #{o["name"]}" }.join("\n")
-            abort "Organisation '#{value}' not found. Available:\n#{names}"
-          end
         end
     end
   end

@@ -9,6 +9,7 @@ require "digest"
 require "base64"
 require "socket"
 
+require_relative "shapeup_cli/version"
 require_relative "shapeup_cli/config"
 require_relative "shapeup_cli/auth"
 require_relative "shapeup_cli/client"
@@ -16,7 +17,6 @@ require_relative "shapeup_cli/output"
 require_relative "shapeup_cli/commands"
 
 module ShapeupCli
-  VERSION = "0.4.0"
   DEFAULT_HOST = "https://shapeup.cc"
 
   # Exit codes
