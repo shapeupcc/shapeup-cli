@@ -34,7 +34,9 @@ module ShapeupCli
         end
 
         def org_id
-          resolve_org(@org_id || Config.organisation_id || abort("No organisation set. Run 'shapeup orgs' to see available orgs, then pass --org <id> or --org <name>."))
+          # Memoised: a name → id lookup hits the API, and call_tool asks for
+          # org_id on every call (a multi-arg command makes several).
+          @resolved_org_id ||= resolve_org(@org_id || Config.organisation_id || abort("No organisation set. Run 'shapeup orgs' to see available orgs, then pass --org <id> or --org <name>."))
         end
 
         def call_tool(name, **args)

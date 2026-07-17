@@ -230,7 +230,7 @@ module ShapeupCli
         def close
           id = positional_arg(1) || abort("Usage: shapeup issues close <id>")
 
-          result = call_tool("close_issue", issue: id.to_s, resolution: "closed")
+          result = call_tool("close_issue", issue: id.to_s, resolution: "wont_do")
 
           render result,
             summary: "Issue ##{id} closed",

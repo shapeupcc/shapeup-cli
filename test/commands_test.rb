@@ -267,4 +267,27 @@ class CommandsTest < Minitest::Test
     comment_subs = ShapeupCli::Commands::Comments.metadata[:subcommands].map { |s| s[:name] }
     assert (%w[edit remove] - comment_subs).empty?, "comments missing subcommands: #{comment_subs}"
   end
+
+  def test_issues_close_sends_wont_do_not_the_off_enum_closed
+    calls = capture_calls(ShapeupCli::Commands::Issues, %w[close 42])
+    _name, args = calls.find { |n, _| n == "close_issue" }
+    assert_equal "wont_do", args[:resolution],
+      "close must send a value the MCP enum accepts (done/wont_do), not the legacy 'closed'"
+  end
+
+  def test_org_id_memoises_a_name_lookup
+    # Orgs overrides org_id to nil, so use an org-scoped command.
+    inst = ShapeupCli::Commands::Issues.new(%w[--org AcmeLabs])
+    count = 0
+    fake = Object.new
+    fake.define_singleton_method(:call_tool) do |name, **_|
+      count += 1 if name == "list_organisations"
+      { "content" => [ { "type" => "text", "text" => JSON.generate(organisations: [ { "id" => 7, "name" => "AcmeLabs" } ]) } ] }
+    end
+    inst.define_singleton_method(:client) { fake }
+
+    assert_equal 7, inst.send(:org_id)
+    inst.send(:org_id)
+    assert_equal 1, count, "the name→id lookup should be memoised, not repeated per call_tool"
+  end
 end
