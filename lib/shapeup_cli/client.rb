@@ -65,18 +65,28 @@ module ShapeupCli
         http.open_timeout = 5
         http.read_timeout = 30
 
-        response = http.request(request)
+        response = with_network_error_handling { http.request(request) }
+        handle_response(response)
+      end
 
-        case response
-        when Net::HTTPUnauthorized
-          raise AuthError, "Authentication failed — run 'shapeup login'"
-        when Net::HTTPForbidden
-          raise PermissionError, "Check your subscription or permissions"
-        when Net::HTTPTooManyRequests
-          raise RateLimitError, "Too many requests"
+      def with_network_error_handling
+        yield
+      rescue Net::OpenTimeout, Net::ReadTimeout
+        raise ApiError, "The server took too long to respond. Please try again."
+      rescue SocketError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT => e
+        raise ApiError, "Couldn't reach #{@host} (#{e.class}). Check your connection and 'shapeup config show'."
+      end
+
+      def handle_response(response)
+        case response.code.to_i
+        when 401 then raise AuthError, "Authentication failed — run 'shapeup login'"
+        when 403 then raise PermissionError, "Check your subscription or permissions"
+        when 429 then raise RateLimitError, "Too many requests — slow down and retry"
+        when 200..299 then nil
+        else raise ApiError, "The server returned an error (HTTP #{response.code})."
         end
 
-        parsed = JSON.parse(response.body)
+        parsed = parse_json(response.body)
 
         if parsed["error"]
           message = parsed["error"]["message"] || "Unknown error"
@@ -89,6 +99,12 @@ module ShapeupCli
         end
 
         parsed["result"]
+      end
+
+      def parse_json(body)
+        JSON.parse(body.to_s)
+      rescue JSON::ParserError
+        raise ApiError, "The server returned an unreadable response."
       end
   end
 end
