@@ -15,6 +15,7 @@ module ShapeupCli
             { name: "create", short: "Create an issue", path: "shapeup issues create \"Title\" --stream <id>" },
             { name: "update", short: "Update an issue", path: "shapeup issues update <id> --title \"New title\"" },
             { name: "move", short: "Move to a kanban column", path: "shapeup issues move <id> --column <id>" },
+            { name: "columns", short: "List kanban columns and their IDs", path: "shapeup issues columns" },
             { name: "done", short: "Mark issue as done", path: "shapeup issues done <id>" },
             { name: "close", short: "Close issue (won't fix)", path: "shapeup issues close <id>" },
             { name: "reopen", short: "Reopen a done/closed issue", path: "shapeup issues reopen <id>" },
@@ -78,6 +79,7 @@ module ShapeupCli
         when "create"        then create
         when "update"        then update
         when "move"          then move
+        when "columns"       then columns
         when "done"          then mark_done
         when "close"         then close
         when "reopen"        then reopen
@@ -184,6 +186,16 @@ module ShapeupCli
             summary: "Issue ##{id} updated",
             breadcrumbs: [
               { cmd: "shapeup issue #{id}", description: "View issue" }
+            ]
+        end
+
+        def columns
+          result = call_tool("list_kanban_columns")
+
+          render result,
+            summary: "Kanban Columns",
+            breadcrumbs: [
+              { cmd: "shapeup issues move <id> --column <id>", description: "Move an issue to a column" }
             ]
         end
 

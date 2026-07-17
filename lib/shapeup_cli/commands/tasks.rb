@@ -15,9 +15,12 @@ module ShapeupCli
             { name: "complete", short: "Mark task(s) as complete", path: "shapeup done <id> [<id>...]" },
             { name: "uncomplete", short: "Mark task as incomplete", path: "shapeup undone <id>" },
             { name: "update", short: "Edit a task's description or move it to a scope", path: "shapeup tasks update <id> --description \"New\"" },
-            { name: "delete", short: "Delete a task", path: "shapeup tasks delete <id>" }
+            { name: "delete", short: "Delete a task", path: "shapeup tasks delete <id>" },
+            { name: "assign", short: "Assign a user", path: "shapeup tasks assign <id> [--user <id>]" },
+            { name: "unassign", short: "Unassign a user", path: "shapeup tasks unassign <id> [--user <id>]" }
           ],
           flags: [
+            { name: "user", type: "string", usage: "User ID or 'me' (assign/unassign; defaults to me)" },
             { name: "pitch", type: "string", usage: "Pitch ID (required for create)" },
             { name: "scope", type: "string", usage: "Scope ID (filter, create target, or update target; use 'none' to unmap)" },
             { name: "assignee", type: "string", usage: "User ID or 'me' (for list)" },
@@ -47,6 +50,8 @@ module ShapeupCli
         when "uncomplete" then uncomplete
         when "update"     then update
         when "delete"     then delete
+        when "assign"     then assign_to("Task", "tasks")
+        when "unassign"   then unassign_from("Task", "tasks")
         when "list", nil  then list
         else list
         end

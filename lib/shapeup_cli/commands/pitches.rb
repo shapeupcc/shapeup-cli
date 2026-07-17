@@ -16,9 +16,12 @@ module ShapeupCli
             { name: "extend", short: "Link a pitch as a continuation of a predecessor", path: "shapeup pitches extend <id> --predecessor <id>" },
             { name: "detach", short: "Remove a pitch's predecessor link", path: "shapeup pitches detach <id>" },
             { name: "delete", short: "Delete a pitch (must have no scopes)", path: "shapeup pitches delete <id>" },
+            { name: "assign", short: "Assign a user", path: "shapeup pitches assign <id> [--user <id>]" },
+            { name: "unassign", short: "Unassign a user", path: "shapeup pitches unassign <id> [--user <id>]" },
             { name: "help", short: "Show usage", path: "shapeup pitches help" }
           ],
           flags: [
+            { name: "user", type: "string", usage: "User ID or 'me' (assign/unassign; defaults to me)" },
             { name: "status", type: "string", usage: "Filter by, or set, status: idea, framed, shaped" },
             { name: "cycle", type: "string", usage: "Filter by cycle ID (list), or assign to cycle ID (update)" },
             { name: "tag", type: "string", usage: "Filter by tag name" },
@@ -61,6 +64,8 @@ module ShapeupCli
         when "extend"    then extend_pitch
         when "detach"    then detach
         when "delete"    then delete
+        when "assign"    then assign_to("Package", "pitches")
+        when "unassign"  then unassign_from("Package", "pitches")
         when "list", nil then list
         when "help"      then help
         else

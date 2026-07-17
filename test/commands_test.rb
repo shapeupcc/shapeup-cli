@@ -268,6 +268,46 @@ class CommandsTest < Minitest::Test
     assert (%w[edit remove] - comment_subs).empty?, "comments missing subcommands: #{comment_subs}"
   end
 
+  # --- parity: new commands wrap the right tools ---
+
+  def assert_tool(klass, argv, tool, expected = {})
+    calls = capture_calls(klass, argv)
+    name, args = calls.find { |n, _| n == tool }
+    refute_nil name, "expected #{klass} #{argv.join(' ')} to call #{tool}; got #{calls.map(&:first).inspect}"
+    expected.each { |k, v| assert_equal v, args[k], "arg #{k}" }
+  end
+
+  def test_scopes_list_uses_list_scopes
+    assert_tool(ShapeupCli::Commands::Scopes, %w[list --pitch 42], "list_scopes", package: "42")
+  end
+
+  def test_scopes_show_and_history
+    assert_tool(ShapeupCli::Commands::Scopes, %w[show 7], "show_scope", scope: "7")
+    assert_tool(ShapeupCli::Commands::Scopes, %w[history 7], "list_scope_history", scope: "7")
+  end
+
+  def test_cycle_crud
+    assert_tool(ShapeupCli::Commands::Cycle, [ "create", "Q3", "--start", "2026-08-03", "--end", "2026-09-11" ],
+      "create_cycle", title: "Q3", start_date: "2026-08-03", end_date: "2026-09-11")
+    assert_tool(ShapeupCli::Commands::Cycle, [ "edit", "12", "--title", "New" ], "update_cycle", cycle: "12", title: "New")
+    assert_tool(ShapeupCli::Commands::Cycle, %w[delete 12 --yes], "delete_cycle", cycle: "12")
+  end
+
+  def test_streams_create_and_edit
+    assert_tool(ShapeupCli::Commands::Streams, [ "create", "Platform" ], "create_stream", title: "Platform")
+    assert_tool(ShapeupCli::Commands::Streams, [ "edit", "3", "--color", "#3b82f6" ], "update_stream", stream: "3", color: "#3b82f6")
+  end
+
+  def test_issues_columns
+    assert_tool(ShapeupCli::Commands::Issues, %w[columns], "list_kanban_columns")
+  end
+
+  def test_assignment_across_types
+    assert_tool(ShapeupCli::Commands::Tasks, %w[assign 5 --user me], "assign_user", assignable_type: "Task", assignable_id: "5")
+    assert_tool(ShapeupCli::Commands::Scopes, %w[assign 5], "assign_user", assignable_type: "Scope")
+    assert_tool(ShapeupCli::Commands::Pitches, %w[unassign 5 --user 9], "unassign_user", assignable_type: "Package", user_id: "9")
+  end
+
   def test_issues_close_sends_wont_do_not_the_off_enum_closed
     calls = capture_calls(ShapeupCli::Commands::Issues, %w[close 42])
     _name, args = calls.find { |n, _| n == "close_issue" }

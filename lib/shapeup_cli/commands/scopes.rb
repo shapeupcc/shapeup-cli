@@ -10,12 +10,17 @@ module ShapeupCli
           short: "Manage scopes within a pitch",
           subcommands: [
             { name: "list", short: "List scopes for a pitch", path: "shapeup scopes list --pitch <id>" },
+            { name: "show", short: "Show a scope with its tasks", path: "shapeup scopes show <id>" },
             { name: "create", short: "Create a new scope", path: "shapeup scopes create --pitch <id> \"Title\"" },
             { name: "update", short: "Update scope title or color", path: "shapeup scopes update <id> --title \"New\"" },
             { name: "position", short: "Update hill chart position (0-100)", path: "shapeup scopes position <id> <position>" },
-            { name: "delete", short: "Delete a scope (must have no tasks or comments)", path: "shapeup scopes delete <id>" }
+            { name: "history", short: "Show hill chart trajectory", path: "shapeup scopes history <id>" },
+            { name: "delete", short: "Delete a scope (must have no tasks or comments)", path: "shapeup scopes delete <id>" },
+            { name: "assign", short: "Assign a user", path: "shapeup scopes assign <id> [--user <id>]" },
+            { name: "unassign", short: "Unassign a user", path: "shapeup scopes unassign <id> [--user <id>]" }
           ],
           flags: [
+            { name: "user", type: "string", usage: "User ID or 'me' (assign/unassign; defaults to me)" },
             { name: "pitch", type: "string", usage: "Pitch ID (required for list and create)" },
             { name: "title", type: "string", usage: "Scope title (for create/update)" },
             { name: "color", type: "string", usage: "Hex color code (for update)" }
@@ -34,10 +39,14 @@ module ShapeupCli
         subcommand = positional_arg(0)
 
         case subcommand
+        when "show"     then show
         when "create"   then create
         when "update"   then update
         when "position" then position
+        when "history"  then history
         when "delete"   then delete
+        when "assign"   then assign_to("Scope", "scopes")
+        when "unassign" then unassign_from("Scope", "scopes")
         when "list", nil then list
         else list
         end
@@ -47,13 +56,37 @@ module ShapeupCli
         def list
           pitch_id = extract_option("--pitch") || abort("Usage: shapeup scopes list --pitch <id>")
 
-          result = call_tool("show_package", package: pitch_id.to_s)
+          result = call_tool("list_scopes", package: pitch_id.to_s)
 
           render result,
             summary: "Scopes for Pitch ##{pitch_id}",
             breadcrumbs: [
-              { cmd: "shapeup scopes create --pitch #{pitch_id} \"Title\"", description: "Add a scope" },
-              { cmd: "shapeup tasks list --pitch #{pitch_id}", description: "List all tasks" }
+              { cmd: "shapeup scopes show <id>", description: "Show a scope with its tasks" },
+              { cmd: "shapeup scopes create --pitch #{pitch_id} \"Title\"", description: "Add a scope" }
+            ]
+        end
+
+        def show
+          scope_id = positional_arg(1) || abort("Usage: shapeup scopes show <id>")
+
+          result = call_tool("show_scope", scope: scope_id.to_s)
+
+          render result,
+            summary: "Scope ##{scope_id}",
+            breadcrumbs: [
+              { cmd: "shapeup scopes history #{scope_id}", description: "Hill chart trajectory" }
+            ]
+        end
+
+        def history
+          scope_id = positional_arg(1) || abort("Usage: shapeup scopes history <id>")
+
+          result = call_tool("list_scope_history", scope: scope_id.to_s)
+
+          render result,
+            summary: "Scope ##{scope_id} history",
+            breadcrumbs: [
+              { cmd: "shapeup scopes position #{scope_id} <0-100>", description: "Update hill position" }
             ]
         end
 

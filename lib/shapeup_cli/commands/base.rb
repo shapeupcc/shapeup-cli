@@ -123,6 +123,22 @@ module ShapeupCli
           consume_flag("--yes") | consume_flag("-y")
         end
 
+        # Shared assign/unassign for any assignable (Task, Scope, Package,
+        # Issue). --user defaults to 'me'.
+        def assign_to(type, noun)
+          id = positional_arg(1) || abort("Usage: shapeup #{noun} assign <id> [--user <id>]")
+          user_id = extract_option("--user") || "me"
+          result = call_tool("assign_user", assignable_type: type, assignable_id: id.to_s, user_id: user_id.to_s)
+          render result, summary: "Assigned #{noun} ##{id}"
+        end
+
+        def unassign_from(type, noun)
+          id = positional_arg(1) || abort("Usage: shapeup #{noun} unassign <id> [--user <id>]")
+          user_id = extract_option("--user") || "me"
+          result = call_tool("unassign_user", assignable_type: type, assignable_id: id.to_s, user_id: user_id.to_s)
+          render result, summary: "Unassigned #{noun} ##{id}"
+        end
+
         # Guard a destructive action. `assume_yes` skips the prompt (the caller
         # passes the result of assume_yes?). With a TTY we ask for confirmation;
         # without one we refuse rather than delete unattended — so agents and
