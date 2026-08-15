@@ -32,6 +32,7 @@ module ShapeupCli
         request["Content-Type"] = "application/json"
         request["Authorization"] = "Bearer #{@token}"
         request["MCP-Protocol-Version"] = MCP_PROTOCOL_VERSION
+        request["X-Shapeup-Agent"] = agent_hint
 
         body = {
           jsonrpc: "2.0",
@@ -48,6 +49,18 @@ module ShapeupCli
 
         response = with_network_error_handling { http.request(request) }
         handle_response(response)
+      end
+
+      # Declare who is driving so the server can attribute agent work honestly
+      # ("tapster and Claude") and keep human-typed commands attributed to the
+      # human alone. Agent harnesses mark their sessions with an env var.
+      AGENT_ENV_HINTS = { "CLAUDECODE" => "claude", "CODEX_THREAD_ID" => "codex" }.freeze
+
+      def agent_hint
+        AGENT_ENV_HINTS.each do |variable, hint|
+          return hint unless ENV[variable].to_s.empty?
+        end
+        "none"
       end
 
       def with_network_error_handling

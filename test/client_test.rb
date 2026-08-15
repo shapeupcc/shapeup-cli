@@ -17,6 +17,28 @@ class ClientTest < Minitest::Test
     assert_equal({ "ok" => true }, handle(200, JSON.generate(result: { ok: true })))
   end
 
+  def test_agent_hint_reflects_the_driving_harness
+    with_env("CLAUDECODE" => nil, "CODEX_THREAD_ID" => nil) do
+      assert_equal "none", @client.send(:agent_hint)
+    end
+
+    with_env("CLAUDECODE" => "1", "CODEX_THREAD_ID" => nil) do
+      assert_equal "claude", @client.send(:agent_hint)
+    end
+
+    with_env("CLAUDECODE" => nil, "CODEX_THREAD_ID" => "thread-1") do
+      assert_equal "codex", @client.send(:agent_hint)
+    end
+  end
+
+  def with_env(vars)
+    previous = vars.keys.to_h { |key| [ key, ENV[key] ] }
+    vars.each { |key, value| ENV[key] = value }
+    yield
+  ensure
+    previous.each { |key, value| ENV[key] = value }
+  end
+
   def test_server_error_with_html_body_raises_ApiError_not_a_parse_error
     error = assert_raises(ShapeupCli::Client::ApiError) do
       handle(500, "<html><body>502 Bad Gateway</body></html>")
