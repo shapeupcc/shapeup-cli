@@ -19,14 +19,17 @@ require_relative "shapeup_cli/commands"
 module ShapeupCli
   DEFAULT_HOST = "https://shapeup.cc"
 
-  # Exit codes
+  # Exit codes, matching the rubric shared by the Basecamp-family CLIs so
+  # agents that know one CLI can read all of them.
   EXIT_OK          = 0
   EXIT_USAGE       = 1
   EXIT_NOT_FOUND   = 2
-  EXIT_AUTH         = 3
+  EXIT_AUTH        = 3
   EXIT_PERMISSION  = 4
-  EXIT_API_ERROR   = 5
-  EXIT_RATE_LIMIT  = 6
+  EXIT_RATE_LIMIT  = 5
+  EXIT_NETWORK     = 6
+  EXIT_API_ERROR   = 7
+  EXIT_AMBIGUOUS   = 8
   EXIT_INTERRUPTED = 130
 
   COMMAND_MAP = {
@@ -41,6 +44,7 @@ module ShapeupCli
     "search"    => Commands::Search,
     "auth"      => Commands::Auth,
     "config"    => Commands::ConfigCmd,
+    "doctor"    => Commands::Doctor,
     "setup"     => Commands::Setup,
     "comments"  => Commands::Comments,
     "checklist" => Commands::Checklist,
@@ -49,6 +53,7 @@ module ShapeupCli
 
   def self.run(argv)
     args = argv.dup
+    @machine_output = args.intersect?(%w[ --json --agent --quiet -q ]) || !$stdout.tty?
 
     # Top-level: shapeup --agent --help
     if args.include?("--agent") && args.include?("--help")
@@ -87,6 +92,7 @@ module ShapeupCli
     when "my-work", "me"  then Commands::MyWork.run(args)
     when "search"         then Commands::Search.run(args)
     when "config"         then Commands::ConfigCmd.run(args)
+    when "doctor"         then Commands::Doctor.run(args)
     when "setup"          then Commands::Setup.run(args)
     when "commands"       then Commands.list_commands
     when "version", "-v", "--version"
@@ -96,26 +102,41 @@ module ShapeupCli
     else
       $stderr.puts "Unknown command: #{command}"
       $stderr.puts "Run 'shapeup help' for usage"
-      exit 1
+      exit EXIT_USAGE
     end
-  rescue Client::AuthError => e
-    $stderr.puts "Not authenticated. Run 'shapeup login' first."
-    exit EXIT_AUTH
+  rescue Client::AuthError
+    fail_with "Not authenticated.", code: "auth_required", exit_code: EXIT_AUTH,
+      retryable: false, hint: "Run 'shapeup login' or set SHAPEUP_TOKEN"
   rescue Client::NotFoundError => e
-    $stderr.puts "Not found: #{e.message}"
-    exit EXIT_NOT_FOUND
+    fail_with "Not found: #{e.message}", code: "not_found", exit_code: EXIT_NOT_FOUND, retryable: false
   rescue Client::PermissionError => e
-    $stderr.puts "Access denied: #{e.message}"
-    exit EXIT_PERMISSION
-  rescue Client::RateLimitError => e
-    $stderr.puts "Rate limited — please wait and try again."
-    exit EXIT_RATE_LIMIT
+    fail_with "Access denied: #{e.message}", code: "forbidden", exit_code: EXIT_PERMISSION, retryable: false
+  rescue Client::RateLimitError
+    fail_with "Rate limited.", code: "rate_limit", exit_code: EXIT_RATE_LIMIT,
+      retryable: true, hint: "Wait a moment and retry"
+  rescue Client::NetworkError => e
+    fail_with e.message, code: "network", exit_code: EXIT_NETWORK,
+      retryable: true, hint: "Check your connection and 'shapeup config show'"
   rescue Client::ApiError => e
-    $stderr.puts "Error: #{e.message}"
-    exit EXIT_API_ERROR
+    fail_with "Error: #{e.message}", code: "api_error", exit_code: EXIT_API_ERROR, retryable: false
   rescue Interrupt
     $stderr.puts "\nAborted."
     exit EXIT_INTERRUPTED
+  end
+
+  # Errors reach machine consumers as a JSON envelope on stdout with a
+  # `retryable` verdict, and humans as plain text on stderr. `retryable: false`
+  # means "no known reason a retry helps", not proof of permanence.
+  def self.fail_with(message, code:, exit_code:, retryable:, hint: nil)
+    if @machine_output
+      envelope = { ok: false, error: message, code: code, retryable: retryable }
+      envelope[:hint] = hint if hint
+      puts JSON.generate(envelope)
+    else
+      $stderr.puts message
+      $stderr.puts hint if hint
+    end
+    exit exit_code
   end
 
   def self.top_level_metadata

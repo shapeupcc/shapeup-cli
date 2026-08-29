@@ -7,6 +7,7 @@ module ShapeupCli
     class NotFoundError < ApiError; end
     class PermissionError < ApiError; end
     class RateLimitError < ApiError; end
+    class NetworkError < ApiError; end
 
     MCP_PROTOCOL_VERSION = "2025-06-18"
 
@@ -66,9 +67,9 @@ module ShapeupCli
       def with_network_error_handling
         yield
       rescue Net::OpenTimeout, Net::ReadTimeout
-        raise ApiError, "The server took too long to respond. Please try again."
+        raise NetworkError, "The server took too long to respond."
       rescue SocketError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT => e
-        raise ApiError, "Couldn't reach #{@host} (#{e.class}). Check your connection and 'shapeup config show'."
+        raise NetworkError, "Couldn't reach #{@host} (#{e.class})."
       end
 
       def handle_response(response)
