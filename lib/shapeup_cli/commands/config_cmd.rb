@@ -10,6 +10,7 @@ module ShapeupCli
           short: "Show and manage CLI configuration",
           subcommands: [
             { name: "show", short: "Show current config (default)", path: "shapeup config show" },
+            { name: "explain", short: "Trace where each setting's value comes from", path: "shapeup config explain" },
             { name: "set", short: "Set a config value", path: "shapeup config set <key> <value>" },
             { name: "init", short: "Create .shapeup/config.json for this directory", path: "shapeup config init <org>" }
           ],
@@ -30,9 +31,10 @@ module ShapeupCli
         subcommand = positional_arg(0)
 
         case subcommand
-        when "set"  then set
-        when "show" then show
-        when "init" then init_project
+        when "set"     then set
+        when "show"    then show
+        when "explain" then explain
+        when "init"    then init_project
         else show
         end
       end
@@ -94,6 +96,81 @@ module ShapeupCli
             puts "Env vars active:"
             puts "  #{env_vars.join(", ")}"
           end
+        end
+
+        # Trace every setting through its full precedence chain, showing each
+        # candidate and which one won. Token values are never printed.
+        def explain
+          settings = {
+            "profile" => profile_candidates,
+            "org" => org_candidates,
+            "host" => host_candidates,
+            "token" => token_candidates
+          }
+
+          if @mode == :styled || @mode == :markdown
+            settings.each { |name, candidates| print_setting(name, candidates) }
+          else
+            data = settings.transform_values do |candidates|
+              selected = candidates.find { |c| c[:selected] }
+              { value: selected&.dig(:value), source: selected&.dig(:source), candidates: candidates }
+            end
+            render data
+          end
+        end
+
+        def profile_candidates
+          select_first [
+            { source: "SHAPEUP_PROFILE env", value: ENV["SHAPEUP_PROFILE"] },
+            { source: "profiles.json default", value: Config.saved_default_profile }
+          ]
+        end
+
+        def org_candidates
+          select_first [
+            { source: "--org flag", value: @org_id },
+            { source: "SHAPEUP_ORG env", value: ENV["SHAPEUP_ORG"] },
+            { source: project_config_source, value: Config.project_config["organisation_id"] },
+            { source: "~/.config/shapeup/config.json", value: Config.global_config["organisation_id"] },
+            { source: "profile '#{Config.current_profile_name}'", value: Config.current_profile&.dig("organisation_id") }
+          ]
+        end
+
+        def host_candidates
+          select_first [
+            { source: "SHAPEUP_HOST env", value: ENV["SHAPEUP_HOST"] },
+            { source: project_config_source, value: Config.project_config["host"] },
+            { source: "~/.config/shapeup/config.json", value: Config.global_config["host"] },
+            { source: "profile '#{Config.current_profile_name}'", value: Config.current_profile&.dig("host") },
+            { source: "built-in default", value: ShapeupCli::DEFAULT_HOST }
+          ]
+        end
+
+        def token_candidates
+          select_first [
+            { source: "SHAPEUP_TOKEN env", value: ENV["SHAPEUP_TOKEN"] && "configured in environment" },
+            { source: "profile '#{Config.current_profile_name}'", value: Config.current_profile&.dig("token") && "configured in profile" }
+          ]
+        end
+
+        def project_config_source
+          Config.project_config_path || Config::PROJECT_CONFIG_NAME
+        end
+
+        def select_first(candidates)
+          winner = candidates.find { |c| !c[:value].nil? && c[:value] != "" }
+          candidates.each { |c| c[:selected] = c.equal?(winner) }
+        end
+
+        def print_setting(name, candidates)
+          puts name
+          width = candidates.map { |c| c[:source].length }.max
+          candidates.each do |c|
+            marker = c[:selected] ? "  <- selected" : ""
+            value = c[:value].nil? ? "(unset)" : c[:value]
+            puts "  #{c[:source].ljust(width)}  #{value}#{marker}"
+          end
+          puts
         end
 
         def find_project_display

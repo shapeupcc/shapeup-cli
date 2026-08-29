@@ -113,6 +113,26 @@ module ShapeupCli
       ENV["SHAPEUP_TOKEN"] || current_profile&.dig("token")
     end
 
+    # --- Introspection (for `config explain` and `doctor`) ---
+
+    def self.saved_default_profile
+      load_profiles_raw["default"]
+    end
+
+    def self.global_config
+      load_config_raw
+    end
+
+    def self.project_config_path
+      find_project_config
+    end
+
+    def self.project_config
+      path = find_project_config
+      return {} unless path
+      JSON.parse(File.read(path)) rescue {}
+    end
+
     # --- Pipe detection ---
 
     def self.piped?

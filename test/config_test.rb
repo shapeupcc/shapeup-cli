@@ -32,6 +32,36 @@ class ConfigTest < Minitest::Test
     assert host.start_with?("http")
   end
 
+  def test_explain_traces_precedence_with_env_override
+    ENV["SHAPEUP_ORG"] = "99"
+
+    out, _err = capture_io do
+      ShapeupCli::Commands::ConfigCmd.run([ "explain", "--json" ])
+    end
+    org = JSON.parse(out).dig("data", "org")
+
+    assert_equal "99", org["value"]
+    assert_equal "SHAPEUP_ORG env", org["source"]
+    selected = org["candidates"].select { |c| c["selected"] }
+    assert_equal 1, selected.length
+    assert_equal "SHAPEUP_ORG env", selected.first["source"]
+  ensure
+    ENV.delete("SHAPEUP_ORG")
+  end
+
+  def test_explain_never_prints_token_values
+    ENV["SHAPEUP_TOKEN"] = "secret_token_value"
+
+    out, _err = capture_io do
+      ShapeupCli::Commands::ConfigCmd.run([ "explain", "--json" ])
+    end
+
+    refute_includes out, "secret_token_value"
+    assert_equal "configured in environment", JSON.parse(out).dig("data", "token", "value")
+  ensure
+    ENV.delete("SHAPEUP_TOKEN")
+  end
+
   def test_piped_detection_method_exists
     # piped? delegates to $stdout.tty? — just verify the method works
     result = ShapeupCli::Config.piped?
