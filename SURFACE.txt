@@ -1,0 +1,164 @@
+CMD shapeup auth
+CMD shapeup checklist
+CMD shapeup commands
+CMD shapeup comments
+CMD shapeup config
+CMD shapeup cycle
+CMD shapeup cycles
+CMD shapeup doctor
+CMD shapeup done
+CMD shapeup help
+CMD shapeup issue
+CMD shapeup issues
+CMD shapeup login
+CMD shapeup logout
+CMD shapeup me
+CMD shapeup my-work
+CMD shapeup orgs
+CMD shapeup pitch
+CMD shapeup pitches
+CMD shapeup scopes
+CMD shapeup search
+CMD shapeup setup
+CMD shapeup streams
+CMD shapeup tags
+CMD shapeup tasks
+CMD shapeup todo
+CMD shapeup undone
+CMD shapeup version
+CMD shapeup watching
+FLAG shapeup --agent bool
+FLAG shapeup --json bool
+FLAG shapeup --md bool
+FLAG shapeup --org string
+FLAG shapeup checklist --issue string
+FLAG shapeup checklist --pitch string
+FLAG shapeup comments --issue string
+FLAG shapeup comments --pitch string
+FLAG shapeup comments --scope string
+FLAG shapeup comments --task string
+FLAG shapeup cycle --end string
+FLAG shapeup cycle --start string
+FLAG shapeup cycle --status string
+FLAG shapeup cycle --title string
+FLAG shapeup issues --all bool
+FLAG shapeup issues --archived bool
+FLAG shapeup issues --assignee string
+FLAG shapeup issues --column string
+FLAG shapeup issues --comments-limit integer
+FLAG shapeup issues --content string
+FLAG shapeup issues --kind string
+FLAG shapeup issues --no-comments bool
+FLAG shapeup issues --pitch string
+FLAG shapeup issues --stream string
+FLAG shapeup issues --tag string
+FLAG shapeup issues --title string
+FLAG shapeup issues --user string
+FLAG shapeup my-work --user string
+FLAG shapeup pitches --appetite string
+FLAG shapeup pitches --comments-limit integer
+FLAG shapeup pitches --content string
+FLAG shapeup pitches --cycle string
+FLAG shapeup pitches --cycle-id string
+FLAG shapeup pitches --limit integer
+FLAG shapeup pitches --no-comments bool
+FLAG shapeup pitches --predecessor string
+FLAG shapeup pitches --status string
+FLAG shapeup pitches --stream string
+FLAG shapeup pitches --tag string
+FLAG shapeup pitches --title string
+FLAG shapeup pitches --user string
+FLAG shapeup scopes --color string
+FLAG shapeup scopes --pitch string
+FLAG shapeup scopes --title string
+FLAG shapeup scopes --user string
+FLAG shapeup streams --all bool
+FLAG shapeup streams --color string
+FLAG shapeup streams --description string
+FLAG shapeup streams --title string
+FLAG shapeup tags --issue string
+FLAG shapeup tags --pitch string
+FLAG shapeup tasks --assignee string
+FLAG shapeup tasks --description string
+FLAG shapeup tasks --pitch string
+FLAG shapeup tasks --scope string
+FLAG shapeup tasks --user string
+SUB shapeup auth list
+SUB shapeup auth remove
+SUB shapeup auth status
+SUB shapeup auth switch
+SUB shapeup checklist add
+SUB shapeup checklist edit
+SUB shapeup checklist list
+SUB shapeup checklist remove
+SUB shapeup checklist tick
+SUB shapeup checklist untick
+SUB shapeup comments add
+SUB shapeup comments edit
+SUB shapeup comments list
+SUB shapeup comments remove
+SUB shapeup config explain
+SUB shapeup config init
+SUB shapeup config set
+SUB shapeup config show
+SUB shapeup cycle create
+SUB shapeup cycle delete
+SUB shapeup cycle edit
+SUB shapeup cycle list
+SUB shapeup cycle show
+SUB shapeup issues add-to-pitch
+SUB shapeup issues assign
+SUB shapeup issues close
+SUB shapeup issues columns
+SUB shapeup issues convert
+SUB shapeup issues create
+SUB shapeup issues defrost
+SUB shapeup issues delete
+SUB shapeup issues done
+SUB shapeup issues icebox
+SUB shapeup issues list
+SUB shapeup issues move
+SUB shapeup issues reopen
+SUB shapeup issues show
+SUB shapeup issues unassign
+SUB shapeup issues unwatch
+SUB shapeup issues update
+SUB shapeup issues watch
+SUB shapeup issues watching
+SUB shapeup pitches assign
+SUB shapeup pitches create
+SUB shapeup pitches delete
+SUB shapeup pitches detach
+SUB shapeup pitches extend
+SUB shapeup pitches help
+SUB shapeup pitches list
+SUB shapeup pitches show
+SUB shapeup pitches unassign
+SUB shapeup pitches update
+SUB shapeup scopes assign
+SUB shapeup scopes create
+SUB shapeup scopes delete
+SUB shapeup scopes history
+SUB shapeup scopes list
+SUB shapeup scopes position
+SUB shapeup scopes show
+SUB shapeup scopes unassign
+SUB shapeup scopes update
+SUB shapeup setup claude
+SUB shapeup setup cursor
+SUB shapeup setup project
+SUB shapeup streams create
+SUB shapeup streams edit
+SUB shapeup streams list
+SUB shapeup streams show
+SUB shapeup tags add
+SUB shapeup tags list
+SUB shapeup tags remove
+SUB shapeup tasks assign
+SUB shapeup tasks complete
+SUB shapeup tasks create
+SUB shapeup tasks delete
+SUB shapeup tasks list
+SUB shapeup tasks unassign
+SUB shapeup tasks uncomplete
+SUB shapeup tasks update
