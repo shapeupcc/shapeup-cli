@@ -113,9 +113,13 @@ module ShapeupCli
 
         Config:
           config show               Show current config
+          config explain            Trace where each setting's value comes from
           config set org "Name"     Set default organisation (name or ID)
           config set host <url>     Set ShapeUp host
           config init "Name"        Create .shapeup/config.json for this directory
+
+        Doctor:
+          doctor                    Diagnose setup: config, auth, connectivity, skills
 
         Setup:
           setup claude              Install skill into Claude Code
@@ -176,7 +180,8 @@ module ShapeupCli
         tags           List/add/remove tags on pitches and issues
         my-work / me   Show my assigned work
         search         Search everything
-        config         Show/set config (set, show, init)
+        config         Show/set config (set, show, explain, init)
+        doctor         Diagnose setup (config, auth, connectivity, skills)
         setup          Install agent skills (claude, cursor, project)
         commands       This list
         help           Usage guide
@@ -200,6 +205,7 @@ require_relative "commands/my_work"
 require_relative "commands/search"
 require_relative "commands/auth"
 require_relative "commands/config_cmd"
+require_relative "commands/doctor"
 require_relative "commands/setup"
 require_relative "commands/comments"
 require_relative "commands/checklist"
