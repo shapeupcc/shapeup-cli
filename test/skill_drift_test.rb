@@ -39,7 +39,7 @@ class SkillDriftTest < Minitest::Test
 
   # Verify every command referenced in Quick Reference actually exists in COMMAND_MAP or shortcuts
   def test_quick_reference_commands_exist
-    valid_commands = %w[login logout auth orgs pitches pitch cycles cycle streams scopes tasks todo done undone issues issue watching comments checklist tags me my-work search config setup --agent --json --md --quiet --ids-only --org --host]
+    valid_commands = %w[login logout doctor auth orgs pitches pitch cycles cycle streams scopes tasks todo done undone issues issue watching comments checklist tags me my-work search config setup --agent --json --md --quiet --ids-only --org --host]
 
     # Extract command names from Quick Reference table: lines like "| ... | `shapeup <command> ...` |"
     @skill_content.scan(/`shapeup ([\w-]+)/).flatten.uniq.each do |cmd|

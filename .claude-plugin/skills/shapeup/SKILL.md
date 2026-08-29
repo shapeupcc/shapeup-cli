@@ -77,7 +77,7 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 4. **Follow breadcrumbs** — JSON responses include a `breadcrumbs` array with suggested next commands. Use these to chain workflows.
 5. **"Pitch" = "Package" in code** — users say "pitch", the API uses "package". The CLI uses "pitch" everywhere.
 6. **Use 'me' and 'none'** — `--assignee me` for current user, `--assignee none` for unassigned items.
-7. **Check exit codes** — 0=OK, 2=not found, 3=auth error, 4=permission denied, 5=API error. Branch on exit code without parsing error text.
+7. **Check exit codes** — 0=OK, 2=not found, 3=auth, 4=forbidden, 5=rate limit, 6=network, 7=API error. Branch on the exit code or the JSON envelope's `retryable` field without parsing error text.
 8. **Deletes need confirmation** — `delete`/`remove` commands (pitches, scopes, tasks, issues, comments) prompt `[y/N]` interactively and **refuse when run non-interactively** unless you pass `--yes` (or `-y`). As an agent you have no TTY, so add `--yes` only after you have confirmed the deletion is intended.
 
 ### Output Modes
@@ -99,9 +99,15 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | 2 | Not found |
 | 3 | Auth error |
 | 4 | Permission denied |
-| 5 | API error |
-| 6 | Rate limited |
+| 5 | Rate limited (retryable) |
+| 6 | Network error (retryable) |
+| 7 | API error |
+| 8 | Ambiguous selector |
 | 130 | Interrupted (Ctrl-C) |
+
+With `--json`, `--agent`, or piped output, errors arrive as a JSON envelope on stdout:
+`{"ok": false, "error": "...", "code": "rate_limit", "retryable": true, "hint": "..."}`.
+Branch on `retryable` to decide retry-vs-abandon; `false` means "no known reason a retry helps".
 
 ## Quick Reference
 
@@ -112,6 +118,8 @@ Manage pitches, scopes, tasks, issues, and cycles via the ShapeUp CLI. Columns a
 | Auth status | `shapeup auth status` |
 | List orgs | `shapeup orgs --json` |
 | Show current org | `shapeup config show` |
+| Trace config precedence | `shapeup config explain` |
+| Diagnose setup problems | `shapeup doctor` |
 | Set default org | `shapeup config set org "Compass Labs"` |
 | Per-directory config | `shapeup config init "Compass Labs"` |
 | Install skill | `shapeup setup claude` |
@@ -366,6 +374,8 @@ Creates `.shapeup/config.json` in the current directory. All commands in this di
 ```bash
 shapeup config set org "Compass Labs"
 shapeup config set host https://shapeup.cc
+shapeup doctor            # full setup diagnosis with fix hints
+shapeup config explain    # why is the CLI using this org/host/token?
 ```
 
 ### Environment Variables
