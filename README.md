@@ -6,15 +6,22 @@ Zero dependencies — pure Ruby stdlib.
 
 ## Install
 
-Clone the repo and add to your PATH:
+Requires **Ruby 3.1+** (macOS system Ruby is 2.6 and will not work — install a newer Ruby with [Homebrew](https://brew.sh) `brew install ruby`, [mise](https://mise.jdx.dev), or [rbenv](https://github.com/rbenv/rbenv), and make sure it comes before `/usr/bin` in your PATH). Check with:
 
 ```bash
-git clone https://github.com/shapeup-cc/shapeup-cli ~/.shapeup-cli
+ruby -v
 ```
 
-Add to `~/.zshrc` (or `~/.bashrc`):
+Install the gem:
 
 ```bash
+gem install shapeup-cli
+```
+
+Or run from a clone of the repo — add to `~/.zshrc` (or `~/.bashrc`):
+
+```bash
+git clone https://github.com/shapeupcc/shapeup-cli.git ~/.shapeup-cli
 export PATH="$HOME/.shapeup-cli/bin:$PATH"
 ```
 

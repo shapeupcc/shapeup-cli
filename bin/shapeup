@@ -1,6 +1,14 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Guard before requiring any code that uses Ruby 3.x syntax, so users on an
+# old Ruby (e.g. macOS system Ruby 2.6) get a clear message, not a SyntaxError.
+if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.1")
+  abort "shapeup requires Ruby 3.1 or newer (you have #{RUBY_VERSION}).\n" \
+        "Install a newer Ruby with Homebrew (brew install ruby), mise, or rbenv, " \
+        "and make sure it comes before /usr/bin in your PATH."
+end
+
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "shapeup_cli"
 
