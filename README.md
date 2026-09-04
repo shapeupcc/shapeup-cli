@@ -12,15 +12,16 @@ Requires **Ruby 3.1+** (macOS system Ruby is 2.6 and will not work — install a
 ruby -v
 ```
 
-Clone the repo and add to your PATH:
+Install the gem:
+
+```bash
+gem install shapeup-cli
+```
+
+Or run from a clone of the repo — add to `~/.zshrc` (or `~/.bashrc`):
 
 ```bash
 git clone https://github.com/shapeupcc/shapeup-cli.git ~/.shapeup-cli
-```
-
-Add to `~/.zshrc` (or `~/.bashrc`):
-
-```bash
 export PATH="$HOME/.shapeup-cli/bin:$PATH"
 ```
 

@@ -21,15 +21,16 @@ shapeup version
 
 If `shapeup` is not found, first check that Ruby 3.1+ is available (`ruby -v`). macOS system Ruby (2.6) is too old — install a newer Ruby with Homebrew (`brew install ruby`), mise, or rbenv, and ensure it comes before `/usr/bin` in PATH.
 
-Then clone the repo and add to PATH:
+Then install the gem:
+
+```bash
+gem install shapeup-cli
+```
+
+If installing the gem is not an option, clone the repo instead and add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
 git clone https://github.com/shapeupcc/shapeup-cli.git ~/.shapeup-cli
-```
-
-Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
-
-```bash
 export PATH="$HOME/.shapeup-cli/bin:$PATH"
 ```
 
