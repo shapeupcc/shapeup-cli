@@ -24,7 +24,7 @@ If `shapeup` is not found, first check that Ruby 3.1+ is available (`ruby -v`). 
 Then clone the repo and add to PATH:
 
 ```bash
-git clone https://github.com/shapeup-cc/shapeup-cli ~/.shapeup-cli
+git clone https://github.com/shapeupcc/shapeup-cli.git ~/.shapeup-cli
 ```
 
 Add to your shell profile (`~/.zshrc` or `~/.bashrc`):

@@ -6,7 +6,7 @@
     "name": "ShapeUp",
     "email": "hello@shapeup.cc"
   },
-  "homepage": "https://github.com/shapeup-cc/shapeup-cli",
-  "repository": "https://github.com/shapeup-cc/shapeup-cli",
+  "homepage": "https://github.com/shapeupcc/shapeup-cli",
+  "repository": "https://github.com/shapeupcc/shapeup-cli",
   "license": "MIT"
 }

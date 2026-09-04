@@ -15,7 +15,7 @@ ruby -v
 Clone the repo and add to your PATH:
 
 ```bash
-git clone https://github.com/shapeup-cc/shapeup-cli ~/.shapeup-cli
+git clone https://github.com/shapeupcc/shapeup-cli.git ~/.shapeup-cli
 ```
 
 Add to `~/.zshrc` (or `~/.bashrc`):

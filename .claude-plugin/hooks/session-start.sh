@@ -18,7 +18,7 @@ if [[ -z "$SHAPEUP_CMD" ]]; then
   cat << 'EOF'
 <hook-output>
 ShapeUp plugin active — CLI not found on PATH.
-Install: git clone https://github.com/shapeup-cc/shapeup-cli ~/.shapeup-cli
+Install: git clone https://github.com/shapeupcc/shapeup-cli.git ~/.shapeup-cli
 </hook-output>
 EOF
   exit 0
