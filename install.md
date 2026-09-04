@@ -19,7 +19,9 @@ Check if the ShapeUp CLI is available:
 shapeup version
 ```
 
-If `shapeup` is not found, clone the repo and add to PATH:
+If `shapeup` is not found, first check that Ruby 3.1+ is available (`ruby -v`). macOS system Ruby (2.6) is too old — install a newer Ruby with Homebrew (`brew install ruby`), mise, or rbenv, and ensure it comes before `/usr/bin` in PATH.
+
+Then clone the repo and add to PATH:
 
 ```bash
 git clone https://github.com/shapeup-cc/shapeup-cli ~/.shapeup-cli
@@ -28,13 +30,13 @@ git clone https://github.com/shapeup-cc/shapeup-cli ~/.shapeup-cli
 Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
-alias shapeup='ruby -I~/.shapeup-cli/cli/lib ~/.shapeup-cli/cli/bin/shapeup'
+export PATH="$HOME/.shapeup-cli/bin:$PATH"
 ```
 
 **Verify:**
 ```bash
 shapeup version
-# Expected: shapeup 0.1.0
+# Expected: shapeup <version>, e.g. shapeup 0.7.0
 ```
 
 ## Step 1: Authenticate with ShapeUp

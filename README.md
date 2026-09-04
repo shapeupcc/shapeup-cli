@@ -6,6 +6,12 @@ Zero dependencies — pure Ruby stdlib.
 
 ## Install
 
+Requires **Ruby 3.1+** (macOS system Ruby is 2.6 and will not work — install a newer Ruby with [Homebrew](https://brew.sh) `brew install ruby`, [mise](https://mise.jdx.dev), or [rbenv](https://github.com/rbenv/rbenv), and make sure it comes before `/usr/bin` in your PATH). Check with:
+
+```bash
+ruby -v
+```
+
 Clone the repo and add to your PATH:
 
 ```bash
