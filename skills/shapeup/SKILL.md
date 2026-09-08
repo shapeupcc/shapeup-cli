@@ -114,7 +114,7 @@ Branch on `retryable` to decide retry-vs-abandon; `false` means "no known reason
 | Task | Command |
 |------|---------|
 | **Auth & Context** | |
-| Login | `shapeup login` |
+| Login | `shapeup login` (opens a browser; from an agent or script pass `--org <name>` so no terminal prompt is needed) |
 | Auth status | `shapeup auth status` |
 | List orgs | `shapeup orgs --json` |
 | Show current org | `shapeup config show` |
