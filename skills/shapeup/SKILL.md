@@ -212,6 +212,10 @@ Branch on `retryable` to decide retry-vs-abandon; `false` means "no known reason
 | My work (alias) | `shapeup my-work --json` |
 | Search everything | `shapeup search "query" --json` |
 | **Agents** | |
+| Your agents | `shapeup agents --json` |
+| Add your agent | `shapeup agents add "Bond"` |
+| Listen for requests as your agent | `shapeup connect` (or `/shapeup-connect` in Claude Code) |
+| Save an agent token as a profile | `shapeup login --token <token>` |
 | Requests waiting for this agent | `shapeup inbox --json` |
 | Mark a request handled | `shapeup inbox done <id>` |
 | Save an agent token as a profile | `shapeup login --token <token>` |

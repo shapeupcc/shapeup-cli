@@ -1,3 +1,4 @@
+CMD shapeup agents
 CMD shapeup auth
 CMD shapeup checklist
 CMD shapeup commands
@@ -33,6 +34,7 @@ FLAG shapeup --agent bool
 FLAG shapeup --json bool
 FLAG shapeup --md bool
 FLAG shapeup --org string
+FLAG shapeup agents --handle string
 FLAG shapeup checklist --issue string
 FLAG shapeup checklist --pitch string
 FLAG shapeup comments --issue string
@@ -40,6 +42,7 @@ FLAG shapeup comments --parent string
 FLAG shapeup comments --pitch string
 FLAG shapeup comments --scope string
 FLAG shapeup comments --task string
+FLAG shapeup connect --as string
 FLAG shapeup connect --interval integer
 FLAG shapeup connect --once bool
 FLAG shapeup connect --trust string
@@ -89,6 +92,8 @@ FLAG shapeup tasks --description string
 FLAG shapeup tasks --pitch string
 FLAG shapeup tasks --scope string
 FLAG shapeup tasks --user string
+SUB shapeup agents add
+SUB shapeup agents list
 SUB shapeup auth list
 SUB shapeup auth remove
 SUB shapeup auth status

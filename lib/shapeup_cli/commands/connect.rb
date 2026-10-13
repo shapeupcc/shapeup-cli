@@ -10,21 +10,23 @@ module ShapeupCli
         {
           command: "connect",
           path: "shapeup connect",
-          short: "For agents: watch the inbox and print each new request as a line of JSON",
+          short: "Listen for requests as your agent, printing each one as a line of JSON",
           flags: [
+            { name: "as", type: "string", usage: "Which of your agents, by handle (default: your only one)" },
             { name: "interval", type: "integer", usage: "Seconds between checks (default: #{DEFAULT_INTERVAL})" },
             { name: "trust", type: "string", usage: "Whose requests to pass on: owner (default) or members" },
             { name: "once", type: "bool", usage: "Check once and exit" }
           ],
           examples: [
-            "SHAPEUP_PROFILE=bond shapeup connect",
-            "SHAPEUP_PROFILE=bond shapeup connect --trust members",
+            "shapeup connect",
+            "shapeup connect --as bond --trust members",
             "SHAPEUP_PROFILE=bond shapeup connect --once"
           ]
         }
       end
 
       def execute
+        handle = extract_option("--as")
         @interval = (extract_option("--interval") || DEFAULT_INTERVAL).to_i.clamp(5, 3600)
         @trust = extract_option("--trust") || "owner"
         abort "--trust must be one of: #{TRUST_LEVELS.join(", ")}" unless TRUST_LEVELS.include?(@trust)
@@ -32,6 +34,7 @@ module ShapeupCli
 
         $stdout.sync = true
         @handed_out = Set.new
+        @profile, @agent_client = sign_in_as_agent(handle)
 
         poll(announce: true)
         until once
@@ -41,11 +44,39 @@ module ShapeupCli
       end
 
       private
+        def sign_in_as_agent(handle)
+          mine = Output.extract_data(call_tool("list_my_agents"))
+          return [ ENV["SHAPEUP_PROFILE"], client ] if mine["signed_in_as_agent"]
+
+          agent = choose_agent(mine["agents"], handle, can_add: mine["can_add"])
+          token = Output.extract_data(call_tool("issue_my_agent_token", agent: agent["id"].to_s))["token"]
+          Config.save_profile(agent["name"], token: token, host: Config.host, organisation_id: org_id.to_s, display_name: agent["display_name"])
+
+          [ agent["name"], Client.new(host: Config.host, token: token) ]
+        end
+
+        def choose_agent(agents, handle, can_add:)
+          if handle
+            agents.find { |agent| agent["name"] == handle.delete_prefix("@") } or fail_with_agents("You have no agent called @#{handle} here.", agents)
+          elsif agents.one?
+            agents.first
+          elsif agents.none?
+            fail_with_agents(can_add ? 'You don\'t have an agent here yet. Add one with: shapeup agents add "Name"' : "Agents need a Pro organisation where you're a member.", agents)
+          else
+            fail_with_agents("You have several agents here. Pick one with --as <handle>.", agents)
+          end
+        end
+
+        def fail_with_agents(message, agents)
+          emit(type: "error", message: message, retryable: false, agents: agents.map { |agent| agent["name"] })
+          exit EXIT_USAGE
+        end
+
         def poll(announce: false)
-          inbox = Output.extract_data(call_tool("list_inbox"))
+          inbox = Output.extract_data(@agent_client.call_tool("list_inbox", organisation: org_id.to_s))
           agent = inbox["agent"]
 
-          emit(type: "connected", agent: agent, organisation_id: org_id.to_s, trust: @trust, interval: @interval) if announce
+          emit(type: "connected", agent: agent, profile: @profile, organisation_id: org_id.to_s, trust: @trust, interval: @interval) if announce
 
           inbox["items"].reverse_each do |item|
             next unless @handed_out.add?(item["id"])

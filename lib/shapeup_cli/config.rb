@@ -100,13 +100,20 @@ module ShapeupCli
       data
     end
 
-    # Resolution order: env var > project config > global config > profile > default
+    # Resolution order: env var > profile picked with SHAPEUP_PROFILE > project config > global config > default profile > default
     def self.host
-      ENV["SHAPEUP_HOST"] || load_config["host"] || current_profile&.dig("host") || ShapeupCli::DEFAULT_HOST
+      ENV["SHAPEUP_HOST"] || chosen_profile_value("host") || load_config["host"] || current_profile&.dig("host") || ShapeupCli::DEFAULT_HOST
     end
 
     def self.organisation_id
-      ENV["SHAPEUP_ORG"] || load_config["organisation_id"] || current_profile&.dig("organisation_id")&.then { |v| v.empty? ? nil : v }
+      ENV["SHAPEUP_ORG"] || chosen_profile_value("organisation_id") || load_config["organisation_id"] || current_profile&.dig("organisation_id")&.then { |v| v.empty? ? nil : v }
+    end
+
+    def self.chosen_profile_value(key)
+      return unless ENV["SHAPEUP_PROFILE"]
+
+      value = current_profile&.dig(key)
+      value unless value.to_s.empty?
     end
 
     def self.token

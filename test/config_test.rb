@@ -24,6 +24,28 @@ class ConfigTest < Minitest::Test
     ENV.delete("SHAPEUP_HOST")
   end
 
+  def test_a_profile_picked_with_shapeup_profile_beats_saved_config
+    ENV["SHAPEUP_PROFILE"] = "bond"
+    profile = { "host" => "http://localhost:3000", "organisation_id" => "1", "profile_name" => "bond" }
+
+    stubbing(ShapeupCli::Config, :current_profile, profile) do
+      stubbing(ShapeupCli::Config, :load_config, { "host" => "https://shapeup.cc", "organisation_id" => "7" }) do
+        assert_equal "http://localhost:3000", ShapeupCli::Config.host
+        assert_equal "1", ShapeupCli::Config.organisation_id
+      end
+    end
+  ensure
+    ENV.delete("SHAPEUP_PROFILE")
+  end
+
+  def stubbing(object, method, value)
+    original = object.method(method)
+    object.define_singleton_method(method) { |*| value }
+    yield
+  ensure
+    object.define_singleton_method(method, original)
+  end
+
   def test_default_host
     ENV.delete("SHAPEUP_HOST")
     # Will fall through to credentials or default

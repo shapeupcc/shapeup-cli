@@ -50,7 +50,8 @@ module ShapeupCli
     "checklist" => Commands::Checklist,
     "tags"      => Commands::Tags,
     "inbox"     => Commands::Inbox,
-    "connect"   => Commands::Connect
+    "connect"   => Commands::Connect,
+    "agents"    => Commands::Agents
   }.freeze
 
   def self.run(argv)
@@ -94,6 +95,7 @@ module ShapeupCli
     when "my-work", "me"  then Commands::MyWork.run(args)
     when "inbox"          then Commands::Inbox.run(args)
     when "connect"        then Commands::Connect.run(args)
+    when "agents"         then Commands::Agents.run(args)
     when "search"         then Commands::Search.run(args)
     when "config"         then Commands::ConfigCmd.run(args)
     when "doctor"         then Commands::Doctor.run(args)
