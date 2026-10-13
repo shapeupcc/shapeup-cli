@@ -214,6 +214,10 @@ Branch on `retryable` to decide retry-vs-abandon; `false` means "no known reason
 | **Agents** | |
 | Requests waiting for this agent | `shapeup inbox --json` |
 | Mark a request handled | `shapeup inbox done <id>` |
+| Save an agent token as a profile | `shapeup login --token <token>` |
+| Watch the inbox as JSON lines | `SHAPEUP_PROFILE=<agent> shapeup connect` |
+| Reply under a comment | `shapeup comments add --issue <id> --parent <comment_id> "Reply"` |
+| React to a comment | `shapeup comments react <comment_id> 👀` |
 
 ## Common Workflows
 

@@ -12,13 +12,15 @@ module ShapeupCli
             { name: "list", short: "List comments", path: "shapeup comments list --issue <id>" },
             { name: "add", short: "Add a comment", path: 'shapeup comments add --issue <id> "Comment text"' },
             { name: "edit", short: "Edit your own comment", path: 'shapeup comments edit <comment_id> "New text"' },
-            { name: "remove", short: "Delete your own comment", path: "shapeup comments remove <comment_id>" }
+            { name: "remove", short: "Delete your own comment", path: "shapeup comments remove <comment_id>" },
+            { name: "react", short: "React to a comment with an emoji", path: "shapeup comments react <comment_id> <emoji>" }
           ],
           flags: [
             { name: "issue", type: "string", usage: "Issue ID" },
             { name: "pitch", type: "string", usage: "Pitch ID" },
             { name: "scope", type: "string", usage: "Scope ID" },
-            { name: "task", type: "string", usage: "Task ID" }
+            { name: "task", type: "string", usage: "Task ID" },
+            { name: "parent", type: "string", usage: "Comment ID to reply under" }
           ],
           examples: [
             "shapeup comments list --issue 42",
@@ -38,6 +40,7 @@ module ShapeupCli
         when "add"    then add
         when "edit"   then edit
         when "remove" then remove
+        when "react"  then react
         when "list", nil then list
         else list
         end
@@ -58,9 +61,12 @@ module ShapeupCli
 
         def add
           type, id = resolve_commentable
-          text = positional_arg(1) || abort('Usage: shapeup comments add --issue <id> "Comment text"')
+          parent = extract_option("--parent")
+          text = positional_arg(1) || abort('Usage: shapeup comments add --issue <id> [--parent <comment_id>] "Comment text"')
 
-          result = call_tool("create_comment", commentable_type: type, commentable_id: id.to_s, content: text)
+          arguments = { commentable_type: type, commentable_id: id.to_s, content: text }
+          arguments[:parent_id] = parent.to_s if parent
+          result = call_tool("create_comment", **arguments)
 
           render result,
             summary: "Comment added to #{type} ##{id}",
@@ -86,6 +92,15 @@ module ShapeupCli
           result = call_tool("delete_comment", comment_id: comment_id.to_s)
 
           render result, summary: "Comment ##{comment_id} deleted"
+        end
+
+        def react
+          comment_id = positional_arg(1) || abort("Usage: shapeup comments react <comment_id> <emoji>")
+          emoji = positional_arg(2) || abort("Usage: shapeup comments react <comment_id> <emoji>")
+
+          result = call_tool("add_reaction", comment_id: comment_id.to_s, emoji: emoji)
+
+          render result, summary: "Reacted #{emoji} to comment ##{comment_id}"
         end
 
         def resolve_commentable

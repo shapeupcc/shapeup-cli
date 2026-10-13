@@ -180,6 +180,7 @@ module ShapeupCli
         tags           List/add/remove tags on pitches and issues
         my-work / me   Show my assigned work
         inbox          Agents: requests waiting on issues (done <id> to clear)
+        connect        Agents: watch the inbox and print each new request as JSON
         search         Search everything
         config         Show/set config (set, show, explain, init)
         doctor         Diagnose setup (config, auth, connectivity, skills)
@@ -212,3 +213,4 @@ require_relative "commands/comments"
 require_relative "commands/checklist"
 require_relative "commands/tags"
 require_relative "commands/inbox"
+require_relative "commands/connect"

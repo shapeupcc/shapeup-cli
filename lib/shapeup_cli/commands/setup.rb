@@ -3,7 +3,9 @@
 module ShapeupCli
   module Commands
     class Setup < Base
-      SKILL_SOURCE = File.expand_path("../../../skills/shapeup/SKILL.md", __dir__)
+      SKILLS_DIR = File.expand_path("../../../skills", __dir__)
+      SKILL_SOURCE = File.join(SKILLS_DIR, "shapeup", "SKILL.md")
+      SKILL_NAMES = %w[ shapeup shapeup-connect ].freeze
 
       def self.metadata
         {
@@ -48,30 +50,25 @@ module ShapeupCli
 
       private
         def install_global(agent)
-          dir = File.join(Dir.home, ".#{agent}", "skills", "shapeup")
-          install_skill(dir, "~/.#{agent}/skills/shapeup/")
+          install_skills(File.join(Dir.home, ".#{agent}", "skills"), "~/.#{agent}/skills")
         end
 
         def install_project
-          dir = File.join(".claude", "skills", "shapeup")
-          install_skill(dir, ".claude/skills/shapeup/")
+          install_skills(File.join(".claude", "skills"), ".claude/skills")
         end
 
-        def install_skill(dir, display_path)
-          unless File.exist?(SKILL_SOURCE)
-            abort "SKILL.md not found at #{SKILL_SOURCE}. Is the CLI installed correctly?"
+        def install_skills(base, display_base)
+          SKILL_NAMES.each do |name|
+            source = File.join(SKILLS_DIR, name, "SKILL.md")
+            abort "SKILL.md not found at #{source}. Is the CLI installed correctly?" unless File.exist?(source)
+
+            dir = File.join(base, name)
+            FileUtils.mkdir_p(dir)
+            dest = File.join(dir, "SKILL.md")
+
+            puts "#{File.exist?(dest) ? "Updating" : "Installing"} #{display_base}/#{name}/SKILL.md"
+            FileUtils.cp(source, dest)
           end
-
-          FileUtils.mkdir_p(dir)
-          dest = File.join(dir, "SKILL.md")
-
-          if File.exist?(dest)
-            puts "Updating #{display_path}SKILL.md"
-          else
-            puts "Installing #{display_path}SKILL.md"
-          end
-
-          FileUtils.cp(SKILL_SOURCE, dest)
 
           puts "Done! Restart your agent session to pick up the skill."
           puts
@@ -79,6 +76,8 @@ module ShapeupCli
           puts "  'my tasks', 'list pitches', 'cycle progress', 'shapeup', etc."
           puts
           puts "Your agent will use the ShapeUp CLI to handle these requests."
+          puts
+          puts "To let your ShapeUp agent pick up requests from issues, run /shapeup-connect."
         end
     end
   end

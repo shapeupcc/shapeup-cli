@@ -59,17 +59,33 @@ class LoginTest < Minitest::Test
     assert_nil profile[:organisation_id]
   end
 
+  def test_token_login_names_the_profile_after_the_agent_and_keeps_the_default
+    out, _err = login([ "--token", "agent-tok" ], orgs: [ ORGS.first ], tty: false, agent: { "name" => "bond" })
+
+    name, profile = @saved.first
+    assert_equal "bond", name
+    assert_equal "agent-tok", profile[:token]
+    assert_equal 1, profile[:organisation_id]
+    assert_empty @switched
+    assert_includes out, "SHAPEUP_PROFILE=bond shapeup me"
+  end
+
   private
-    def login(args, orgs:, tty:)
+    def login(args, orgs:, tty:, agent: nil)
       client = Object.new
-      client.define_singleton_method(:call_tool) { |*| { "content" => [ { "type" => "text", "text" => JSON.generate("organisations" => orgs) } ] } }
+      client.define_singleton_method(:call_tool) do |name, **|
+        payload = name == "list_inbox" ? { "agent" => agent, "items" => [] } : { "organisations" => orgs }
+        { "content" => [ { "type" => "text", "text" => JSON.generate(payload) } ] }
+      end
 
       saved = @saved
+      @switched = []
+      switched = @switched
       stubbing(ShapeupCli::Auth, :login, { "access_token" => "tok" }) do
         stubbing(ShapeupCli::Client, :new, client) do
           stubbing(ShapeupCli::Config, :host, "https://shapeup.cc") do
             stubbing(ShapeupCli::Config, :save_profile, ->(name, **profile) { saved << [ name, profile ] }) do
-              stubbing(ShapeupCli::Config, :switch_profile, nil) do
+              stubbing(ShapeupCli::Config, :switch_profile, ->(name) { switched << name }) do
                 stubbing($stdin, :tty?, tty) do
                   capture_io do
                     ShapeupCli::Commands::Login.run(args)

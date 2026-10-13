@@ -3,6 +3,7 @@ CMD shapeup checklist
 CMD shapeup commands
 CMD shapeup comments
 CMD shapeup config
+CMD shapeup connect
 CMD shapeup cycle
 CMD shapeup cycles
 CMD shapeup doctor
@@ -35,9 +36,13 @@ FLAG shapeup --org string
 FLAG shapeup checklist --issue string
 FLAG shapeup checklist --pitch string
 FLAG shapeup comments --issue string
+FLAG shapeup comments --parent string
 FLAG shapeup comments --pitch string
 FLAG shapeup comments --scope string
 FLAG shapeup comments --task string
+FLAG shapeup connect --interval integer
+FLAG shapeup connect --once bool
+FLAG shapeup connect --trust string
 FLAG shapeup cycle --end string
 FLAG shapeup cycle --start string
 FLAG shapeup cycle --status string
@@ -97,6 +102,7 @@ SUB shapeup checklist untick
 SUB shapeup comments add
 SUB shapeup comments edit
 SUB shapeup comments list
+SUB shapeup comments react
 SUB shapeup comments remove
 SUB shapeup config explain
 SUB shapeup config init

@@ -11,6 +11,7 @@ module ShapeupCli
         @host = Config.host
         @profile_name = nil
         @requested_org = nil
+        @token = nil
 
         args.each_with_index do |arg, i|
           case arg
@@ -20,17 +21,28 @@ module ShapeupCli
           when /\A--profile=(.+)\z/ then @profile_name = $1
           when "--org" then @requested_org = args[i + 1]
           when /\A--org=(.+)\z/ then @requested_org = $1
+          when "--token" then @token = args[i + 1]
+          when /\A--token=(.+)\z/ then @token = $1
           end
         end
       end
 
       def run
-        token = ShapeupCli::Auth.login(host: @host)["access_token"]
+        token = @token || ShapeupCli::Auth.login(host: @host)["access_token"]
         orgs = fetch_organisations(token)
         org = choose_organisation(orgs)
 
-        profile_name = @profile_name || (org ? slug(org["name"]) : slug(URI.parse(@host).host))
+        profile_name = @profile_name || agent_name(token, org) || (org ? slug(org["name"]) : slug(URI.parse(@host).host))
         Config.save_profile(profile_name, token: token, host: @host, organisation_id: org&.dig("id"), display_name: org&.dig("name") || profile_name)
+
+        if @token && org
+          puts "\nProfile '#{profile_name}' saved. Your default profile is unchanged."
+          puts "  org: #{org["name"]} (#{org["id"]})"
+          puts "  host: #{@host}"
+          puts "\nUse it with: SHAPEUP_PROFILE=#{profile_name} shapeup me"
+          return
+        end
+
         Config.switch_profile(profile_name)
 
         if org
@@ -52,6 +64,15 @@ module ShapeupCli
           result = Client.new(host: @host, token: token).call_tool("list_organisations")
           data = Output.extract_data(result)
           data.is_a?(Hash) ? (data["organisations"] || []) : []
+        end
+
+        def agent_name(token, org)
+          return unless @token && org
+
+          data = Output.extract_data(Client.new(host: @host, token: token).call_tool("list_inbox", organisation: org["id"].to_s))
+          data.dig("agent", "name") if data.is_a?(Hash)
+        rescue Client::ApiError
+          nil
         end
 
         def choose_organisation(orgs)
