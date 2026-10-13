@@ -64,6 +64,23 @@ themselves.
    }
    ```
 
+   Always fill in the test command before asking, so the agent can check its work unattended.
+   Work out how this project runs its tests from what is in the directory, and list each way
+   you find:
+
+   | You find | Add |
+   |----------|-----|
+   | `bin/rails` | `"Bash(bin/rails test *)"` |
+   | `Rakefile` | `"Bash(bundle exec rake *)"` |
+   | a `test/` folder of Ruby files and no Rakefile | `"Bash(ruby test/*)"` |
+   | `package.json` with a `test` script | `"Bash(npm test *)"` (or the yarn/pnpm equivalent the lockfile shows) |
+   | `Makefile` with a test or check target | `"Bash(make test *)"` / `"Bash(make check *)"` |
+   | `pyproject.toml`, `pytest.ini` or `tests/` with Python | `"Bash(pytest *)"` |
+   | `go.mod` | `"Bash(go test *)"` |
+   | `Cargo.toml` | `"Bash(cargo test *)"` |
+
+   If you can't tell, ask the user how they run the tests rather than leaving it out.
+
    Merge with what is there, never replace it, and make sure `.claude/settings.local.json` is in
    `.gitignore`. If they say no, carry on: they will approve each command instead. If prompts keep
    appearing after writing it, tell them a new session picks the rules up.

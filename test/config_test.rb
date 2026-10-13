@@ -38,6 +38,26 @@ class ConfigTest < Minitest::Test
     ENV.delete("SHAPEUP_PROFILE")
   end
 
+  def test_explain_shows_a_picked_profile_winning_over_saved_config
+    ENV["SHAPEUP_PROFILE"] = "bond"
+    profile = { "host" => "http://localhost:3000", "organisation_id" => "1", "profile_name" => "bond" }
+
+    out = nil
+    stubbing(ShapeupCli::Config, :current_profile, profile) do
+      stubbing(ShapeupCli::Config, :global_config, { "host" => "https://shapeup.cc", "organisation_id" => "7" }) do
+        stubbing(ShapeupCli::Config, :load_config, { "host" => "https://shapeup.cc", "organisation_id" => "7" }) do
+          out, _err = capture_io { ShapeupCli::Commands::ConfigCmd.run([ "explain", "--json" ]) }
+        end
+      end
+    end
+
+    data = JSON.parse(out)["data"]
+    assert_equal [ "1", "profile picked with --profile (bond)" ], data["org"].values_at("value", "source")
+    assert_equal [ "http://localhost:3000", "profile picked with --profile (bond)" ], data["host"].values_at("value", "source")
+  ensure
+    ENV.delete("SHAPEUP_PROFILE")
+  end
+
   def test_profile_flag_picks_the_profile_for_any_command_but_login
     args = [ "inbox", "--profile", "bond", "--json" ]
     ShapeupCli.use_profile_from!(args)

@@ -121,7 +121,7 @@ module ShapeupCli
 
         def profile_candidates
           select_first [
-            { source: "SHAPEUP_PROFILE env", value: ENV["SHAPEUP_PROFILE"] },
+            { source: "--profile flag or SHAPEUP_PROFILE env", value: ENV["SHAPEUP_PROFILE"] },
             { source: "profiles.json default", value: Config.saved_default_profile }
           ]
         end
@@ -130,6 +130,7 @@ module ShapeupCli
           select_first [
             { source: "--org flag", value: @org_id },
             { source: "SHAPEUP_ORG env", value: ENV["SHAPEUP_ORG"] },
+            { source: picked_profile_source, value: Config.chosen_profile_value("organisation_id") },
             { source: project_config_source, value: Config.project_config["organisation_id"] },
             { source: "~/.config/shapeup/config.json", value: Config.global_config["organisation_id"] },
             { source: "profile '#{Config.current_profile_name}'", value: Config.current_profile&.dig("organisation_id") }
@@ -139,6 +140,7 @@ module ShapeupCli
         def host_candidates
           select_first [
             { source: "SHAPEUP_HOST env", value: ENV["SHAPEUP_HOST"] },
+            { source: picked_profile_source, value: Config.chosen_profile_value("host") },
             { source: project_config_source, value: Config.project_config["host"] },
             { source: "~/.config/shapeup/config.json", value: Config.global_config["host"] },
             { source: "profile '#{Config.current_profile_name}'", value: Config.current_profile&.dig("host") },
@@ -151,6 +153,10 @@ module ShapeupCli
             { source: "SHAPEUP_TOKEN env", value: ENV["SHAPEUP_TOKEN"] && "configured in environment" },
             { source: "profile '#{Config.current_profile_name}'", value: Config.current_profile&.dig("token") && "configured in profile" }
           ]
+        end
+
+        def picked_profile_source
+          "profile picked with --profile (#{ENV["SHAPEUP_PROFILE"] || "none"})"
         end
 
         def project_config_source
