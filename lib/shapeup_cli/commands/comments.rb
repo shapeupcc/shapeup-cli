@@ -66,12 +66,9 @@ module ShapeupCli
           attach_paths = extract_options("--attach")
           text = positional_arg(1) || abort('Usage: shapeup comments add --issue <id> [--parent <comment_id>] [--attach <image>] "Comment text"')
 
-          text, images = local_images_in(text)
-          images += attach_paths.map { |path| [ path, nil ] }
-
-          arguments = { commentable_type: type, commentable_id: id.to_s, content: text }
+          arguments = { commentable_type: type, commentable_id: id.to_s, content: place_local_images(text) }
           arguments[:parent_id] = parent.to_s if parent
-          arguments[:attachments] = images.map { |path, alt| upload_image(path, alt) } if images.any?
+          arguments[:attachments] = attach_paths.map { |path| upload_image(path, nil) } if attach_paths.any?
           result = call_tool("create_comment", **arguments)
 
           render result,
@@ -85,7 +82,7 @@ module ShapeupCli
           comment_id = positional_arg(1) || abort('Usage: shapeup comments edit <comment_id> "New text"')
           text = positional_arg(2) || abort('Usage: shapeup comments edit <comment_id> "New text"')
 
-          result = call_tool("update_comment", comment_id: comment_id.to_s, content: text)
+          result = call_tool("update_comment", comment_id: comment_id.to_s, content: place_local_images(text))
 
           render result, summary: "Comment ##{comment_id} updated"
         end
@@ -111,20 +108,16 @@ module ShapeupCli
 
         IMAGE_TYPES = { ".png" => "image/png", ".jpg" => "image/jpeg", ".jpeg" => "image/jpeg", ".gif" => "image/gif", ".webp" => "image/webp" }.freeze
         IMAGE_MAX_SIZE = 10 * 1024 * 1024
-        MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)\)\n?/
+        MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/
 
-        def local_images_in(text)
-          images = []
-          text = text.gsub(MARKDOWN_IMAGE) do |markdown|
-            alt, path = $1, $2
-            if path.match?(%r{\A[a-z][a-z0-9+.-]*://}i) || !File.file?(path)
-              markdown
-            else
-              images << [ path, alt ]
-              ""
-            end
+        def place_local_images(text)
+          text.gsub(MARKDOWN_IMAGE) do |markdown|
+            alt, path, caption = $1, $2, $3
+            next markdown if path.match?(%r{\A[a-z][a-z0-9+.-]*:}i) || !File.file?(path)
+
+            uploaded = upload_image(path, alt)
+            %(![#{uploaded[:alt]}](attachment:#{uploaded[:attachment]}#{%( "#{caption}") if caption}))
           end
-          [ text.strip, images ]
         end
 
         def upload_image(path, alt)

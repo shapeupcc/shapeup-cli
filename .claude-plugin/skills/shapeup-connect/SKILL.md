@@ -142,18 +142,36 @@ Give the subagent this, filled in:
 >    commit there. Never push, deploy, merge or delete branches unless the owner said so in this
 >    session.
 > 4. If the ask is unclear or you are blocked, ask on the issue rather than guess.
-> 5. If the work changes anything people see, show it. Use whatever browser tool you have to take
->    screenshots of each place it touches, before (from the main branch) and after (from yours),
->    at the size people use it and on a phone when it matters. Save them as PNG files outside the
->    repository, with names that say what they show.
+> 5. If the work changes anything people see, compare it the way a careful reviewer would:
+>    - From your diff, list the screens and states it touches, including the ones it could break.
+>    - Run the main branch beside yours: check main out into a git worktree outside this
+>      repository and start it on a second port, so both are up at once. How to start and sign in
+>      to the app should be in the project's CLAUDE.md or README; if it isn't, ask on the issue.
+>    - With whatever browser tool you have, capture each screen in both, at the same size and with
+>      the same content, plus a phone width and dark mode where they matter. Save PNGs outside the
+>      repository, named for what they show.
+>    - Stop the second server and remove the worktree when you're done.
 > 6. Reply once, under the comment that asked:
 >    `shapeup --profile <profile> comments add --issue <issue.id> --parent <reply_to.comment_id> "<reply>"`
->    (leave out `--parent` when `reply_to.comment_id` is null). Start with `@<requester.name>`.
->    Say what changed, the branch and commit, how you checked it, and anything still open.
->    Keep it short and plain. Put each screenshot in the reply as a local Markdown image,
->    `![Toolbar after the fix, on a phone](/tmp/toolbar-after-phone.png)`: the CLI uploads it and
->    the words in brackets become its description for people who can't see it, so write them
->    properly. Mention anyone the requester asked you to hand over to.
+>    (leave out `--parent` when `reply_to.comment_id` is null). Start with `@<requester.name>`,
+>    then say what changed, the branch and commit, and how you checked it. Keep it plain.
+>
+>    When you have screenshots, write the rest like a review: a `## heading` per area, a line on
+>    what changed there, then its before and after as local Markdown images on consecutive lines,
+>    so they sit side by side:
+>
+>    ```markdown
+>    ## Toolbar
+>    Looks the same. Dropdowns now open with focus on the first item.
+>
+>    ![Toolbar on main, dropdown open](/tmp/shots/toolbar-before.png "Before")
+>    ![Toolbar on this branch, dropdown open with the first item focused](/tmp/shots/toolbar-after.png "After")
+>    ```
+>
+>    The CLI uploads each image where it stands. The words in brackets are its description for
+>    people who can't see it, so say what it shows; the quoted word is its caption. End with a
+>    `## Worth a look` section for anything that seems off, and mention whoever the requester asked
+>    you to hand over to.
 > 7. Then take it out of the inbox: `shapeup --profile <profile> inbox done <id>`.
 > 8. Report back in one line.
 

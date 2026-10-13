@@ -224,14 +224,14 @@ class CommandsTest < Minitest::Test
     assert_equal [ [ "detach_package", { package: "42" } ] ], calls
   end
 
-  def test_comments_add_uploads_local_markdown_images_and_attach_flags
+  def test_comments_add_keeps_local_images_in_place_and_adds_attach_flags_at_the_end
     Dir.mktmpdir do |dir|
       before, after = File.join(dir, "toolbar-before.png"), File.join(dir, "after.png")
       File.binwrite(before, "\x89PNG before")
       File.binwrite(after, "\x89PNG after")
 
       inst = ShapeupCli::Commands::Comments.new([ "add", "--issue", "42", "--attach", before,
-        "@miles Fixed.\n![Toolbar after the fix](#{after})\n![Remote](https://example.com/x.png)" ])
+        "@miles Fixed.\n![Toolbar after the fix](#{after} \"After\")\n![Remote](https://example.com/x.png)" ])
       calls = []
       inst.define_singleton_method(:call_tool) do |name, **args|
         calls << [ name, args ]
@@ -246,8 +246,8 @@ class CommandsTest < Minitest::Test
       assert_equal [ "\x89PNG after" ].pack("m0"), calls.first.last[:data]
 
       _, comment = calls.find { |name, _| name == "create_comment" }
-      assert_equal "@miles Fixed.\n![Remote](https://example.com/x.png)", comment[:content]
-      assert_equal [ { attachment: "token-after.png", alt: "Toolbar after the fix" }, { attachment: "token-toolbar-before.png", alt: "toolbar before" } ], comment[:attachments]
+      assert_equal "@miles Fixed.\n![Toolbar after the fix](attachment:token-after.png \"After\")\n![Remote](https://example.com/x.png)", comment[:content]
+      assert_equal [ { attachment: "token-toolbar-before.png", alt: "toolbar before" } ], comment[:attachments]
     end
   end
 
