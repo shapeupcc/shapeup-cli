@@ -38,6 +38,7 @@ FLAG shapeup --profile string
 FLAG shapeup agents --handle string
 FLAG shapeup checklist --issue string
 FLAG shapeup checklist --pitch string
+FLAG shapeup comments --attach string
 FLAG shapeup comments --issue string
 FLAG shapeup comments --parent string
 FLAG shapeup comments --pitch string

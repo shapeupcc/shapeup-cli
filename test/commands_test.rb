@@ -2,6 +2,7 @@
 
 require_relative "test_helper"
 require "stringio"
+require "tmpdir"
 
 # Covers the new write/delete commands and, especially, the confirmation
 # guard on destructive actions. Commands are exercised without touching the
@@ -221,6 +222,33 @@ class CommandsTest < Minitest::Test
   def test_pitches_detach
     calls = capture_calls(ShapeupCli::Commands::Pitches, %w[detach 42])
     assert_equal [ [ "detach_package", { package: "42" } ] ], calls
+  end
+
+  def test_comments_add_uploads_local_markdown_images_and_attach_flags
+    Dir.mktmpdir do |dir|
+      before, after = File.join(dir, "toolbar-before.png"), File.join(dir, "after.png")
+      File.binwrite(before, "\x89PNG before")
+      File.binwrite(after, "\x89PNG after")
+
+      inst = ShapeupCli::Commands::Comments.new([ "add", "--issue", "42", "--attach", before,
+        "@miles Fixed.\n![Toolbar after the fix](#{after})\n![Remote](https://example.com/x.png)" ])
+      calls = []
+      inst.define_singleton_method(:call_tool) do |name, **args|
+        calls << [ name, args ]
+        payload = name == "upload_attachment" ? { "attachment" => "token-#{args[:filename]}" } : {}
+        { "content" => [ { "type" => "text", "text" => JSON.generate(payload) } ] }
+      end
+      inst.define_singleton_method(:render) { |*_, **__| nil }
+      capture_io { inst.execute }
+
+      uploads = calls.select { |name, _| name == "upload_attachment" }.map { |_, args| args.values_at(:filename, :content_type) }
+      assert_equal [ [ "after.png", "image/png" ], [ "toolbar-before.png", "image/png" ] ], uploads
+      assert_equal [ "\x89PNG after" ].pack("m0"), calls.first.last[:data]
+
+      _, comment = calls.find { |name, _| name == "create_comment" }
+      assert_equal "@miles Fixed.\n![Remote](https://example.com/x.png)", comment[:content]
+      assert_equal [ { attachment: "token-after.png", alt: "Toolbar after the fix" }, { attachment: "token-toolbar-before.png", alt: "toolbar before" } ], comment[:attachments]
+    end
   end
 
   def test_comments_edit

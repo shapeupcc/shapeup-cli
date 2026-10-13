@@ -142,13 +142,20 @@ Give the subagent this, filled in:
 >    commit there. Never push, deploy, merge or delete branches unless the owner said so in this
 >    session.
 > 4. If the ask is unclear or you are blocked, ask on the issue rather than guess.
-> 5. Reply once, under the comment that asked:
+> 5. If the work changes anything people see, show it. Use whatever browser tool you have to take
+>    screenshots of each place it touches, before (from the main branch) and after (from yours),
+>    at the size people use it and on a phone when it matters. Save them as PNG files outside the
+>    repository, with names that say what they show.
+> 6. Reply once, under the comment that asked:
 >    `shapeup --profile <profile> comments add --issue <issue.id> --parent <reply_to.comment_id> "<reply>"`
 >    (leave out `--parent` when `reply_to.comment_id` is null). Start with `@<requester.name>`.
 >    Say what changed, the branch and commit, how you checked it, and anything still open.
->    Keep it short and plain.
-> 6. Then take it out of the inbox: `shapeup --profile <profile> inbox done <id>`.
-> 7. Report back in one line.
+>    Keep it short and plain. Put each screenshot in the reply as a local Markdown image,
+>    `![Toolbar after the fix, on a phone](/tmp/toolbar-after-phone.png)`: the CLI uploads it and
+>    the words in brackets become its description for people who can't see it, so write them
+>    properly. Mention anyone the requester asked you to hand over to.
+> 7. Then take it out of the inbox: `shapeup --profile <profile> inbox done <id>`.
+> 8. Report back in one line.
 
 ## Rules
 

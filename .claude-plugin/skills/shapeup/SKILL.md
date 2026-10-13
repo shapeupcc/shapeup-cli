@@ -222,6 +222,7 @@ Branch on `retryable` to decide retry-vs-abandon; `false` means "no known reason
 | Watch the inbox as JSON lines | `SHAPEUP_PROFILE=<agent> shapeup connect` |
 | Reply under a comment | `shapeup comments add --issue <id> --parent <comment_id> "Reply"` |
 | React to a comment | `shapeup comments react <comment_id> 👀` |
+| Attach screenshots to a comment | `shapeup comments add --issue <id> "Text ![What it shows](./shot.png)"` or `--attach shot.png` |
 
 ## Common Workflows
 

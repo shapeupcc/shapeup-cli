@@ -100,6 +100,14 @@ module ShapeupCli
           value
         end
 
+        def extract_options(flag)
+          values = []
+          while (value = extract_option(flag))
+            values << value
+          end
+          values
+        end
+
         # Get the first positional arg (not a flag)
         def positional_arg(position = 0)
           positionals = @remaining.reject { |a| a.start_with?("--") }
