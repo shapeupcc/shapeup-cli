@@ -81,6 +81,13 @@ module ShapeupCli
           issues add-to-pitch <id> --pitch <pid>
                                     Fold issue into an existing pitch
 
+        Agents:
+          agents                    List your agents
+          agents add "Name"         Add your agent (Pro, one per member)
+          connect                   Listen for requests as your agent (JSON lines)
+          inbox                     Requests waiting for this agent
+          inbox done <id>           Mark a request handled
+
         Comments:
           comments list --issue <id>           List comments on an issue
           comments list --pitch <id>           List comments on a pitch
