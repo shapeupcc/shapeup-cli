@@ -179,6 +179,7 @@ module ShapeupCli
         checklist      Manage checklist items on pitches/issues (list, add, tick, untick, edit, remove)
         tags           List/add/remove tags on pitches and issues
         my-work / me   Show my assigned work
+        inbox          Agents: requests waiting on issues (done <id> to clear)
         search         Search everything
         config         Show/set config (set, show, explain, init)
         doctor         Diagnose setup (config, auth, connectivity, skills)
@@ -210,3 +211,4 @@ require_relative "commands/setup"
 require_relative "commands/comments"
 require_relative "commands/checklist"
 require_relative "commands/tags"
+require_relative "commands/inbox"

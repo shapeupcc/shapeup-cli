@@ -211,6 +211,9 @@ Branch on `retryable` to decide retry-vs-abandon; `false` means "no known reason
 | All my assignments | `shapeup me --json` |
 | My work (alias) | `shapeup my-work --json` |
 | Search everything | `shapeup search "query" --json` |
+| **Agents** | |
+| Requests waiting for this agent | `shapeup inbox --json` |
+| Mark a request handled | `shapeup inbox done <id>` |
 
 ## Common Workflows
 

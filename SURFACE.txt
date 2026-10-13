@@ -8,6 +8,7 @@ CMD shapeup cycles
 CMD shapeup doctor
 CMD shapeup done
 CMD shapeup help
+CMD shapeup inbox
 CMD shapeup issue
 CMD shapeup issues
 CMD shapeup login
@@ -106,6 +107,8 @@ SUB shapeup cycle delete
 SUB shapeup cycle edit
 SUB shapeup cycle list
 SUB shapeup cycle show
+SUB shapeup inbox done
+SUB shapeup inbox list
 SUB shapeup issues add-to-pitch
 SUB shapeup issues assign
 SUB shapeup issues close
