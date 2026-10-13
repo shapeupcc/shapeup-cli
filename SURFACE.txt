@@ -34,6 +34,7 @@ FLAG shapeup --agent bool
 FLAG shapeup --json bool
 FLAG shapeup --md bool
 FLAG shapeup --org string
+FLAG shapeup --profile string
 FLAG shapeup agents --handle string
 FLAG shapeup checklist --issue string
 FLAG shapeup checklist --pitch string

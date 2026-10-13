@@ -38,6 +38,20 @@ class ConfigTest < Minitest::Test
     ENV.delete("SHAPEUP_PROFILE")
   end
 
+  def test_profile_flag_picks_the_profile_for_any_command_but_login
+    args = [ "inbox", "--profile", "bond", "--json" ]
+    ShapeupCli.use_profile_from!(args)
+    assert_equal "bond", ENV["SHAPEUP_PROFILE"]
+    assert_equal [ "inbox", "--json" ], args
+
+    args = [ "me", "--profile=q" ]
+    ShapeupCli.use_profile_from!(args)
+    assert_equal "q", ENV["SHAPEUP_PROFILE"]
+    assert_equal [ "me" ], args
+  ensure
+    ENV.delete("SHAPEUP_PROFILE")
+  end
+
   def stubbing(object, method, value)
     original = object.method(method)
     object.define_singleton_method(method) { |*| value }

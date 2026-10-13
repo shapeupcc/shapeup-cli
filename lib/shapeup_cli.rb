@@ -56,6 +56,7 @@ module ShapeupCli
 
   def self.run(argv)
     args = argv.dup
+    use_profile_from!(args) unless args.first == "login"
     @machine_output = args.intersect?(%w[ --json --agent --quiet -q ]) || !$stdout.tty?
 
     # Top-level: shapeup --agent --help
@@ -145,6 +146,15 @@ module ShapeupCli
     exit exit_code
   end
 
+  def self.use_profile_from!(args)
+    if (index = args.index("--profile"))
+      ENV["SHAPEUP_PROFILE"] = args.delete_at(index + 1) || abort("Usage: --profile <name>")
+      args.delete_at(index)
+    elsif (flag = args.find { |arg| arg.start_with?("--profile=") })
+      ENV["SHAPEUP_PROFILE"] = args.delete(flag).delete_prefix("--profile=")
+    end
+  end
+
   def self.top_level_metadata
     {
       command: "shapeup",
@@ -163,6 +173,7 @@ module ShapeupCli
       },
       inherited_flags: [
         { name: "org", type: "string", usage: "Organisation ID or name" },
+        { name: "profile", type: "string", usage: "Saved profile to use, e.g. your agent's (same as SHAPEUP_PROFILE)" },
         { name: "json", type: "bool", usage: "Full JSON envelope with breadcrumbs" },
         { name: "md", type: "bool", usage: "Markdown output" },
         { name: "agent", type: "bool", usage: "Raw JSON data only (for AI agents)" }

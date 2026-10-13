@@ -133,6 +133,9 @@ module ShapeupCli
           setup cursor              Install skill into Cursor
           setup project             Install skill into current project
 
+        Profiles (append to any command):
+          --profile <name>          Use a saved profile, e.g. your agent's
+
         Output modes (append to any command):
           --json                    Full JSON envelope with breadcrumbs
           --md                      Markdown tables
