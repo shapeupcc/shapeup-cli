@@ -70,8 +70,8 @@ themselves.
 
    | You find | Add |
    |----------|-----|
-   | `bin/rails` | `"Bash(bin/rails test *)"` |
-   | `Rakefile` | `"Bash(bundle exec rake *)"` |
+   | `bin/rails` | `"Bash(bin/rails test *)"`, and nothing broader: never `rake *` or `bin/rails *`, which would also approve tasks that wipe databases |
+   | `Rakefile` and no `bin/rails` | `"Bash(bundle exec rake test *)"` |
    | a `test/` folder of Ruby files and no Rakefile | `"Bash(ruby test/*)"` |
    | `package.json` with a `test` script | `"Bash(npm test *)"` (or the yarn/pnpm equivalent the lockfile shows) |
    | `Makefile` with a test or check target | `"Bash(make test *)"` / `"Bash(make check *)"` |
@@ -79,7 +79,10 @@ themselves.
    | `go.mod` | `"Bash(go test *)"` |
    | `Cargo.toml` | `"Bash(cargo test *)"` |
 
-   If you can't tell, ask the user how they run the tests rather than leaving it out.
+   If you can't tell, ask the user how they run the tests rather than leaving it out. Add the
+   project's linter the same way when it has one, such as `"Bash(bin/rubocop *)"`,
+   `"Bash(npm run lint *)"` or `"Bash(make check *)"`. Keep every rule to the one command it
+   names.
 
    Merge with what is there, never replace it, and make sure `.claude/settings.local.json` is in
    `.gitignore`. If they say no, carry on: they will approve each command instead. If prompts keep
