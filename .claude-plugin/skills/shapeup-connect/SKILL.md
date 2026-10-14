@@ -103,9 +103,25 @@ Signed in as the user, it gives the agent a fresh token, saves it as a CLI profi
 the agent, and listens as the agent. Add `--trust members` only if the user asked for anyone in
 the organisation to be able to use the agent. The default trusts only the agent's owner.
 
-Watch its output. Use the Monitor tool when you have it, so each new line wakes you, with the
-longest timeout it allows. When the watch ends but the connector is still running, start watching
-again straight away, without telling the user. Every line is one JSON event:
+Watch its output with the Monitor tool when you have it, using the longest timeout it allows and
+exactly this command, with `OUTPUT` set to the connector's output file:
+
+```bash
+f=OUTPUT; seen="$f.seen"; n=$(cat "$seen" 2>/dev/null || echo 0)
+while true; do
+  m=$(wc -l < "$f")
+  if [ "$m" -gt "$n" ]; then
+    sed -n "$((n + 1)),${m}p" "$f" | grep -v '"retryable":true'
+    n=$m; echo "$n" > "$seen"
+  fi
+  sleep 3
+done
+```
+
+Don't use `tail -f` or `tail -F` on the output file: they can miss lines. The command keeps its place
+in `OUTPUT.seen`, so when the watch ends but the connector is still running, start it again
+straight away, without telling the user, and nothing is missed or repeated. If the connector
+exits, you are told separately. Every line is one JSON event:
 
 | `type` | What to do |
 |--------|------------|
