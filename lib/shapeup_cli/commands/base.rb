@@ -7,8 +7,27 @@ module ShapeupCli
         instance = new(args)
         if instance.agent_help?
           puts JSON.pretty_generate(instance.class.metadata)
+        elsif args.intersect?(%w[ --help -h ])
+          print_help
         else
           instance.execute
+        end
+      end
+
+      def self.print_help
+        about = metadata
+        puts "#{about[:path]}: #{about[:short]}"
+        about[:subcommands]&.then do |subcommands|
+          puts "\nSubcommands:"
+          subcommands.each { |sub| puts "  #{sub[:path].to_s.ljust(48)} #{sub[:short]}" }
+        end
+        about[:flags]&.then do |flags|
+          puts "\nFlags:" if flags.any?
+          flags.each { |flag| puts "  --#{flag[:name].to_s.ljust(46)} #{flag[:usage]}" }
+        end
+        about[:examples]&.then do |examples|
+          puts "\nExamples:"
+          examples.each { |example| puts "  #{example}" }
         end
       end
 

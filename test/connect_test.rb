@@ -94,6 +94,19 @@ class ConnectTest < Minitest::Test
     assert_match 'shapeup agents add \"Name\"', out
   end
 
+  def test_help_prints_usage_instead_of_connecting
+    connect = ShapeupCli::Commands::Connect
+    original = connect.instance_method(:execute)
+    connect.define_method(:execute) { raise "--help started connecting" }
+
+    out, _err = capture_io { connect.run([ "--help" ]) }
+
+    assert_match "shapeup connect: Listen for requests", out
+    assert_match "--trust", out
+  ensure
+    connect.define_method(:execute, original)
+  end
+
   def test_rejects_an_unknown_trust_level
     assert_raises(SystemExit) do
       capture_io { ShapeupCli::Commands::Connect.new([ "--trust", "everyone", "--once" ]).execute }
