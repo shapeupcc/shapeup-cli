@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "openssl"
+
 module ShapeupCli
   class Client
     class ApiError < StandardError; end
@@ -10,6 +12,12 @@ module ShapeupCli
     class NetworkError < ApiError; end
 
     MCP_PROTOCOL_VERSION = "2025-06-18"
+
+    DROPPED_CONNECTION_ERRORS = [
+      SocketError, IOError, OpenSSL::SSL::SSLError,
+      Errno::ECONNREFUSED, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::EPIPE,
+      Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ENETDOWN, Errno::ETIMEDOUT
+    ].freeze
 
     def initialize(host: Config.host, token: Auth.token)
       raise AuthError, "Not authenticated" unless token
@@ -68,7 +76,7 @@ module ShapeupCli
         yield
       rescue Net::OpenTimeout, Net::ReadTimeout
         raise NetworkError, "The server took too long to respond."
-      rescue SocketError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT => e
+      rescue *DROPPED_CONNECTION_ERRORS => e
         raise NetworkError, "Couldn't reach #{@host} (#{e.class})."
       end
 
@@ -77,6 +85,7 @@ module ShapeupCli
         when 401 then raise AuthError, "Authentication failed — run 'shapeup login'"
         when 403 then raise PermissionError, "Check your subscription or permissions"
         when 429 then raise RateLimitError, "Too many requests — slow down and retry"
+        when 502..504 then raise NetworkError, "Couldn't reach #{@host} (HTTP #{response.code})."
         when 200..299 then nil
         else raise ApiError, "The server returned an error (HTTP #{response.code})."
         end

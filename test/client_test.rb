@@ -55,6 +55,7 @@ class ClientTest < Minitest::Test
     assert_raises(ShapeupCli::Client::AuthError) { handle(401, "") }
     assert_raises(ShapeupCli::Client::PermissionError) { handle(403, "") }
     assert_raises(ShapeupCli::Client::RateLimitError) { handle(429, "") }
+    assert_raises(ShapeupCli::Client::NetworkError) { handle(503, "<html>Service Unavailable</html>") }
   end
 
   def test_jsonrpc_error_maps_to_typed_error
@@ -68,6 +69,14 @@ class ClientTest < Minitest::Test
     end
     assert_raises(ShapeupCli::Client::ApiError) do
       @client.send(:with_network_error_handling) { raise Errno::ECONNREFUSED }
+    end
+  end
+  def test_a_dropped_connection_is_a_network_error
+    [ Errno::ECONNRESET, Errno::EPIPE, Errno::ENETUNREACH, EOFError, OpenSSL::SSL::SSLError ].each do |dropped|
+      error = assert_raises(ShapeupCli::Client::NetworkError) do
+        @client.send(:with_network_error_handling) { raise dropped }
+      end
+      assert_match dropped.name, error.message
     end
   end
 end

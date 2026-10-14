@@ -112,7 +112,7 @@ again straight away, without telling the user. Every line is one JSON event:
 | `connected` | Tell the user the agent is listening. Note `profile`: from now on, run every ShapeUp command for this agent as `shapeup --profile <profile> ...` (leave out `--profile` when it is null). |
 | `request` | Handle it, below. |
 | `ignored` | Tell the user in one line who asked and that they are not trusted. Do nothing else. |
-| `error` | Nothing while `retryable` is true. Otherwise tell the user the `message`. If the connector exits, restart it once. |
+| `error` | Nothing while `retryable` is true: the connector keeps retrying by itself, pausing longer each time, up to two minutes. Otherwise tell the user the `message`. If the connector exits after a network error (`code` is `network`, or the message mentions a connection), wait a minute and restart it; give up and tell the user after five restarts in a row that never reach `connected`. For any other exit, restart it once. |
 
 Don't poll the inbox yourself. The connector does that.
 

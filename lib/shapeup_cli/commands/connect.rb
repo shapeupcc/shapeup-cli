@@ -5,6 +5,7 @@ module ShapeupCli
     class Connect < Base
       DEFAULT_INTERVAL = 30
       TRUST_LEVELS = %w[ owner members ].freeze
+      RETRY_DELAYS = [ 5, 10, 20, 40, 80, 120 ].freeze
 
       def self.metadata
         {
@@ -34,16 +35,35 @@ module ShapeupCli
 
         $stdout.sync = true
         @handed_out = Set.new
-        @profile, @agent_client = sign_in_as_agent(handle)
+        @profile, @agent_client = keep_trying(forever: !once) { sign_in_as_agent(handle) }
 
-        poll(announce: true)
+        poll
         until once
-          sleep @interval
+          pause @interval
           poll
         end
       end
 
       private
+        def keep_trying(forever:)
+          attempt = 0
+          begin
+            yield
+          rescue Client::NetworkError, Client::RateLimitError => error
+            raise unless forever
+
+            delay = RETRY_DELAYS[attempt] || RETRY_DELAYS.last
+            emit(type: "error", message: error.message, retryable: true, retrying_in: delay)
+            pause delay
+            attempt += 1
+            retry
+          end
+        end
+
+        def pause(seconds)
+          sleep seconds
+        end
+
         def sign_in_as_agent(handle)
           mine = Output.extract_data(call_tool("list_my_agents"))
           return [ ENV["SHAPEUP_PROFILE"], client ] if mine["signed_in_as_agent"]
@@ -72,11 +92,11 @@ module ShapeupCli
           exit EXIT_USAGE
         end
 
-        def poll(announce: false)
+        def poll
           inbox = Output.extract_data(@agent_client.call_tool("list_inbox", organisation: org_id.to_s))
           agent = inbox["agent"]
 
-          emit(type: "connected", agent: agent, profile: @profile, organisation_id: org_id.to_s, trust: @trust, interval: @interval) if announce
+          announce(agent) unless @connected
 
           inbox["items"].reverse_each do |item|
             next unless @handed_out.add?(item["id"])
@@ -89,6 +109,11 @@ module ShapeupCli
           end
         rescue Client::NetworkError, Client::RateLimitError => error
           emit(type: "error", message: error.message, retryable: true)
+        end
+
+        def announce(agent)
+          emit(type: "connected", agent: agent, profile: @profile, organisation_id: org_id.to_s, trust: @trust, interval: @interval)
+          @connected = true
         end
 
         def trusted?(requester, agent)

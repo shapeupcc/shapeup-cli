@@ -107,6 +107,36 @@ class ConnectTest < Minitest::Test
     connect.define_method(:execute, original)
   end
 
+def test_rides_out_dropped_connections_and_announces_itself_once_through
+  client = as_agent([ item(11, 1, "miles") ])
+  dropped = Set.new
+  reliable = client.method(:call_tool)
+  client.define_singleton_method(:call_tool) do |name, **args|
+    raise ShapeupCli::Client::NetworkError, "Couldn't reach (Errno::ECONNRESET)." if dropped.add?(name)
+    reliable.call(name, **args)
+  end
+
+  command = ShapeupCli::Commands::Connect.new([ "--org", "1" ])
+  command.define_singleton_method(:client) { client }
+  pauses = []
+  command.define_singleton_method(:pause) { |seconds| pauses << seconds; throw :stop if pauses.size == 3 }
+
+  out, _err = capture_io { catch(:stop) { command.execute } }
+  events = out.lines.map { |line| JSON.parse(line) }
+
+  assert_equal %w[ error error connected request ], events.map { |e| e["type"] }
+  assert events.first(2).all? { |e| e["retryable"] }
+  assert_equal 5, events.first["retrying_in"]
+  assert_equal [ 5, 30, 30 ], pauses
+end
+
+def test_once_gives_up_when_it_cannot_sign_in
+  client = Object.new
+  client.define_singleton_method(:call_tool) { |*, **| raise ShapeupCli::Client::NetworkError, "Couldn't reach" }
+
+  assert_raises(ShapeupCli::Client::NetworkError) { connect([], client) }
+end
+
   def test_rejects_an_unknown_trust_level
     assert_raises(SystemExit) do
       capture_io { ShapeupCli::Commands::Connect.new([ "--trust", "everyone", "--once" ]).execute }
