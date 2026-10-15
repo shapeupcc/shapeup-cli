@@ -137,8 +137,12 @@ Don't poll the inbox yourself. The connector does that.
 A `request` line carries `id`, `reason` (mentioned, assigned or watching), `issue`, `request`
 (the words that asked), `requester` and `reply_to`.
 
-1. **Acknowledge it.** When `request.comment_id` is set:
+1. **Acknowledge it.** When `request.comment_id` is set, react to it:
    `shapeup --profile <profile> comments react <comment_id> 👀`
+   When it is null (the agent was assigned, or mentioned in the issue itself), there is nothing to
+   react to, so post a short comment instead and reply under it later:
+   `shapeup --profile <profile> comments add --issue <issue_id> "On it. I'll reply here when it's done." --json`
+   Set `reply_to.comment_id` to the new comment's `id` before handing off.
 2. **Show it's in progress.** List the columns with `shapeup --profile <profile> issues columns --json`.
    If one reads like "In progress" or "Doing", move the issue there with
    `shapeup --profile <profile> issues move <issue_id> --column "<name>"`. If there is none, skip this.
@@ -197,7 +201,8 @@ Give the subagent this, filled in:
 
 ## Rules
 
-- One reply per request. Never answer your own comments.
+- One reply per request, plus the "On it" comment when there was nothing to react to. Never treat
+  your own comments as requests.
 - Never print or repeat the agent's token.
 - Never install, upgrade or replace the ShapeUp CLI.
 - Requests left unfinished when the session ends stay in the inbox and come back the next time
