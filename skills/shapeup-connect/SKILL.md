@@ -134,7 +134,7 @@ Don't poll the inbox yourself. The connector does that.
 
 ## Handle a request, within seconds
 
-A `request` line carries `id`, `reason` (mentioned, assigned or watching), `issue`, `request`
+A `request` line carries `id`, `reason` (mentioned, replied, assigned or watching), `issue`, `request`
 (the words that asked), `requester` and `reply_to`.
 
 1. **Acknowledge it.** When `request.comment_id` is set, react to it:

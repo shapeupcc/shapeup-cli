@@ -33,7 +33,9 @@ module ShapeupCli
           check_api_reachable,
           check_auth,
           check_org_access,
-          check_claude_skill
+          check_claude_skills,
+          check_agent,
+          check_connector
         ]
 
         report(checks)
@@ -127,7 +129,7 @@ module ShapeupCli
         def check_auth
           return skip("auth", "no token to test") unless Config.token
 
-          result = Output.extract_data(Client.new.call_tool("list_organisations"))
+          result = Output.extract_data(client.call_tool("list_organisations"))
           @organisations = result.is_a?(Hash) ? (result["organisations"] || []) : Array(result)
           pass "auth", "signed in, #{@organisations.length} organisation(s)"
         rescue Client::AuthError
@@ -149,15 +151,59 @@ module ShapeupCli
           end
         end
 
-        def check_claude_skill
-          installed = File.join(Dir.home, ".claude", "skills", "shapeup", "SKILL.md")
-          return warn!("claude skill", "not installed", hint: "shapeup setup claude") unless File.exist?(installed)
-
-          if File.read(installed) == File.read(Setup::SKILL_SOURCE)
-            pass "claude skill", "installed and current"
-          else
-            warn! "claude skill", "installed but stale", hint: "shapeup setup claude"
+        def check_claude_skills
+          states = Setup::SKILL_NAMES.to_h do |name|
+            installed = File.join(Dir.home, ".claude", "skills", name, "SKILL.md")
+            current = File.exist?(installed) && File.read(installed) == File.read(File.join(Setup::SKILLS_DIR, name, "SKILL.md"))
+            [ name, File.exist?(installed) ? (current ? :current : :stale) : :missing ]
           end
+
+          if states.values.all?(:current)
+            pass "claude skills", "#{states.keys.join(", ")} installed and current"
+          else
+            behind = states.reject { |_, state| state == :current }.map { |name, state| "#{name} #{state == :missing ? "not installed" : "stale"}" }
+            warn! "claude skills", behind.join(", "), hint: "shapeup setup claude"
+          end
+        end
+
+        def check_agent
+          return skip("agent", "auth not verified") unless @organisations && Config.organisation_id
+
+          mine = Output.extract_data(client.call_tool("list_my_agents", organisation: Config.organisation_id.to_s))
+          return pass("agent", "signed in as an agent") if mine["signed_in_as_agent"]
+
+          @agent = mine["agents"].first
+          return skip("agent", mine["can_add"] ? "you have no agent here" : "agents need a Pro organisation where you're a member") unless @agent
+
+          handle = @agent["name"]
+          profile = Config.profile(handle)
+          return warn!("agent", "@#{handle} isn't connected on this computer yet", hint: "/shapeup-connect in Claude Code") unless profile&.dig("token")
+
+          Client.new(host: profile["host"] || Config.host, token: profile["token"])
+            .call_tool("list_inbox", organisation: (profile["organisation_id"] || Config.organisation_id).to_s)
+          @connected_agent = handle
+          pass "agent", "@#{handle} signs in with profile '#{handle}'"
+        rescue Client::AuthError
+          fail! "agent", "@#{handle}'s saved token was rejected", hint: "/shapeup-connect in Claude Code"
+        rescue Client::ApiError => e
+          fail! "agent", e.message
+        end
+
+        def check_connector
+          return skip("connector", "no connected agent to listen for") unless @connected_agent
+
+          if connector_running_for?(@connected_agent)
+            pass "connector", "listening as @#{@connected_agent} on this computer"
+          else
+            warn! "connector", "not listening as @#{@connected_agent} on this computer", hint: "/shapeup-connect in Claude Code"
+          end
+        rescue Errno::ENOENT
+          skip "connector", "can't check for running processes here"
+        end
+
+        def connector_running_for?(handle)
+          commands = IO.popen([ "pgrep", "-lf", "shapeup connect" ], err: File::NULL, &:readlines)
+          commands.any? { |command| command.match?(/--as @?#{Regexp.escape(handle)}\b/) || !command.include?("--as") }
         end
 
         def pass(name, message) = Check.new(name: name, status: :pass, message: message)

@@ -66,6 +66,10 @@ module ShapeupCli
       end
     end
 
+    def self.profile(name)
+      load_profiles_raw.dig("profiles", name)
+    end
+
     def self.current_profile
       data = load_profiles_raw
       name = ENV["SHAPEUP_PROFILE"] || data["default"]
