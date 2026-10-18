@@ -71,6 +71,19 @@ class DoctorTest < Minitest::Test
     assert_equal :skip, agent_check(agents: [], profile: nil).status
   end
 
+  def test_connector_check_recognises_the_agent_by_profile_or_handle
+    doctor = ShapeupCli::Commands::Doctor.new([])
+    running = [
+      "123 ruby /bin/shapeup --profile blofeld connect --until-request",
+      "124 ruby /bin/shapeup connect --as @oddjob --until-request --fresh"
+    ]
+    doctor.define_singleton_method(:connector_commands) { running }
+
+    assert doctor.send(:connector_running_for?, "blofeld")
+    assert doctor.send(:connector_running_for?, "oddjob")
+    refute doctor.send(:connector_running_for?, "aldente")
+  end
+
   private
     def agent_check(agents:, profile:, agent_client: nil)
       doctor = ShapeupCli::Commands::Doctor.new([])

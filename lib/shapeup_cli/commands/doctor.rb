@@ -202,8 +202,14 @@ module ShapeupCli
         end
 
         def connector_running_for?(handle)
-          commands = IO.popen([ "pgrep", "-lf", "shapeup connect" ], err: File::NULL, &:readlines)
-          commands.any? { |command| command.match?(/--as @?#{Regexp.escape(handle)}\b/) || !command.include?("--as") }
+          connector_commands.any? do |command|
+            named = command[/--(?:as|profile)[ =]@?([\w.-]+)/, 1] || command[/SHAPEUP_PROFILE=([\w.-]+)/, 1]
+            named.nil? || named == handle
+          end
+        end
+
+        def connector_commands
+          IO.popen([ "pgrep", "-lf", "shapeup.* connect" ], err: File::NULL, &:readlines)
         end
 
         def pass(name, message) = Check.new(name: name, status: :pass, message: message)
