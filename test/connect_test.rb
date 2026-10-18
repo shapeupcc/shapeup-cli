@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
+require "tmpdir"
 
 class ConnectTest < Minitest::Test
   AGENT = { "id" => 9, "name" => "bond", "owner" => { "id" => 1, "name" => "miles" } }.freeze
@@ -137,13 +138,55 @@ def test_once_gives_up_when_it_cannot_sign_in
   assert_raises(ShapeupCli::Client::NetworkError) { connect([], client) }
 end
 
+def test_until_request_stops_once_a_request_is_passed_on
+  events, pauses = run_until_request([ "--until-request", "--fresh" ], as_agent([ item(11, 1, "miles") ]))
+
+  assert_equal %w[ connected request ], events.map { |e| e["type"] }
+  assert_empty pauses
+end
+
+def test_until_request_remembers_what_it_handed_out_until_fresh
+  inbox = as_agent([ item(11, 1, "miles") ])
+  run_until_request([ "--until-request", "--fresh" ], inbox)
+
+  events, pauses = run_until_request([ "--until-request" ], inbox)
+  assert_equal %w[ connected ], events.map { |e| e["type"] }
+  assert_equal [ 30 ], pauses
+
+  events, _ = run_until_request([ "--until-request", "--fresh" ], inbox)
+  assert_equal %w[ connected request ], events.map { |e| e["type"] }
+end
+
+def test_until_request_forgets_requests_that_have_left_the_inbox
+  run_until_request([ "--until-request", "--fresh" ], as_agent([ item(11, 1, "miles") ]))
+  run_until_request([ "--until-request" ], as_agent([]))
+
+  assert_equal [], JSON.parse(File.read(handed_out_file))
+end
+
   def test_rejects_an_unknown_trust_level
     assert_raises(SystemExit) do
       capture_io { ShapeupCli::Commands::Connect.new([ "--trust", "everyone", "--once" ]).execute }
     end
   end
 
-  private
+private
+  def run_until_request(argv, client)
+    command = ShapeupCli::Commands::Connect.new(argv + [ "--org", "1" ])
+    command.define_singleton_method(:client) { client }
+    file = handed_out_file
+    command.define_singleton_method(:handed_out_path) { |_agent| file }
+    pauses = []
+    command.define_singleton_method(:pause) { |seconds| pauses << seconds; throw :stop }
+
+    out, _err = capture_io { catch(:stop) { command.execute } }
+    [ out.lines.map { |line| JSON.parse(line) }, pauses ]
+  end
+
+  def handed_out_file
+    @handed_out_file ||= File.join(Dir.mktmpdir, "connect", "bond.json")
+  end
+
     def stubbing(object, method, value)
       original = object.method(method)
       object.define_singleton_method(method) { |*args, **kwargs, &block| value.respond_to?(:call) ? value.call(*args, **kwargs, &block) : value }

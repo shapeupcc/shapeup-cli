@@ -16,12 +16,15 @@ module ShapeupCli
             { name: "as", type: "string", usage: "Which of your agents, by handle (default: your only one)" },
             { name: "interval", type: "integer", usage: "Seconds between checks (default: #{DEFAULT_INTERVAL})" },
             { name: "trust", type: "string", usage: "Whose requests to pass on: owner (default) or members" },
-            { name: "once", type: "bool", usage: "Check once and exit" }
+            { name: "once", type: "bool", usage: "Check once and exit" },
+            { name: "until-request", type: "bool", usage: "Exit after the first check that passes on a request, remembering what was handed out" },
+            { name: "fresh", type: "bool", usage: "With --until-request, forget what earlier runs handed out" }
           ],
           examples: [
             "shapeup connect",
             "shapeup connect --as bond --trust members",
-            "SHAPEUP_PROFILE=bond shapeup connect --once"
+            "SHAPEUP_PROFILE=bond shapeup connect --once",
+            "shapeup connect --until-request --fresh"
           ]
         }
       end
@@ -32,13 +35,14 @@ module ShapeupCli
         @trust = extract_option("--trust") || "owner"
         abort "--trust must be one of: #{TRUST_LEVELS.join(", ")}" unless TRUST_LEVELS.include?(@trust)
         once = consume_flag("--once")
+        @until_request = consume_flag("--until-request")
+        @fresh = consume_flag("--fresh")
 
         $stdout.sync = true
-        @handed_out = Set.new
         @profile, @agent_client = keep_trying(forever: !once) { sign_in_as_agent(handle) }
 
         poll
-        until once
+        until once || @requested
           pause @interval
           poll
         end
@@ -97,18 +101,38 @@ module ShapeupCli
           agent = inbox["agent"]
 
           announce(agent) unless @connected
+          @handed_out ||= Set.new(@until_request && !@fresh ? read_handed_out(agent) : [])
 
           inbox["items"].reverse_each do |item|
             next unless @handed_out.add?(item["id"])
 
             if trusted?(item["requester"], agent)
               emit(type: "request", **item.transform_keys(&:to_sym))
+              @requested = @until_request
             else
               emit(type: "ignored", id: item["id"], requester: item["requester"], why: "#{item["requester"]["name"]} is not trusted (--trust #{@trust})")
             end
           end
+
+          write_handed_out(agent, inbox["items"].map { |item| item["id"] }) if @until_request
         rescue Client::NetworkError, Client::RateLimitError => error
           emit(type: "error", message: error.message, retryable: true)
+        end
+
+        def handed_out_path(agent)
+          File.join(Config::CONFIG_DIR, "connect", "#{agent["name"]}.json")
+        end
+
+        def read_handed_out(agent)
+          JSON.parse(File.read(handed_out_path(agent)))
+        rescue Errno::ENOENT, JSON::ParserError
+          []
+        end
+
+        def write_handed_out(agent, waiting)
+          @handed_out &= waiting
+          FileUtils.mkdir_p(File.dirname(handed_out_path(agent)))
+          File.write(handed_out_path(agent), JSON.generate(@handed_out.to_a))
         end
 
         def announce(agent)

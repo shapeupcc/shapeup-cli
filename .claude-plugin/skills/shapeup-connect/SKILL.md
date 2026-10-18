@@ -93,39 +93,33 @@ themselves.
 
 ## Listen
 
-Start the connector as a background command and keep it running:
+Start the connector in the background, as a command you are told about when it finishes (in
+Claude Code: Bash with `run_in_background`):
 
 ```bash
-shapeup connect [--as <handle>]
+shapeup connect --until-request --fresh [--as <handle>]
 ```
 
 Signed in as the user, it gives the agent a fresh token, saves it as a CLI profile named after
 the agent, and listens as the agent. Add `--trust members` only if the user asked for anyone in
 the organisation to be able to use the agent. The default trusts only the agent's owner.
 
-Watch its output with the Monitor tool when you have it, using the longest timeout it allows and
-exactly this command, with `OUTPUT` set to the connector's output file:
+It checks the inbox every 30 seconds and finishes as soon as it has passed on a request. When it
+finishes, read its whole output and act on every line, then start it again straight away, in the
+background, as the agent and without `--fresh` (keep `--trust members` if you used it):
 
 ```bash
-f=OUTPUT; seen="$f.seen"; n=$(cat "$seen" 2>/dev/null || echo 0)
-while true; do
-  m=$(wc -l < "$f")
-  if [ "$m" -gt "$n" ]; then
-    sed -n "$((n + 1)),${m}p" "$f" | grep -v '"retryable":true'
-    n=$m; echo "$n" > "$seen"
-  fi
-  sleep 3
-done
+shapeup --profile <profile> connect --until-request
 ```
 
-Don't use `tail -f` or `tail -F` on the output file: they can miss lines. The command keeps its place
-in `OUTPUT.seen`, so when the watch ends but the connector is still running, start it again
-straight away, without telling the user, and nothing is missed or repeated. If the connector
-exits, you are told separately. Every line is one JSON event:
+`--fresh` is only for the first start in a session: it hands out again anything an earlier
+session left unfinished. Without it, the connector never hands out the same request twice.
+Don't watch its output with Monitor or `tail`: the connector finishing is what wakes you, even
+when your last turn ended in an error. Every line is one JSON event:
 
 | `type` | What to do |
 |--------|------------|
-| `connected` | Tell the user the agent is listening. Note `profile`: from now on, run every ShapeUp command for this agent as `shapeup --profile <profile> ...` (leave out `--profile` when it is null). |
+| `connected` | The first time, tell the user the agent is listening; after a restart, say nothing. Note `profile`: from now on, run every ShapeUp command for this agent as `shapeup --profile <profile> ...` (leave out `--profile` when it is null). |
 | `request` | Handle it, below. |
 | `ignored` | Tell the user in one line who asked and that they are not trusted. Do nothing else. |
 | `error` | Nothing while `retryable` is true: the connector keeps retrying by itself, pausing longer each time, up to two minutes. Otherwise tell the user the `message`. If the connector exits after a network error (`code` is `network`, or the message mentions a connection), wait a minute and restart it; give up and tell the user after five restarts in a row that never reach `connected`. For any other exit, restart it once. |
@@ -148,7 +142,7 @@ A `request` line carries `id`, `reason` (mentioned, replied, assigned or watchin
    `shapeup --profile <profile> issues move <issue_id> --column "<name>"`. If there is none, skip this.
 3. **Hand it off.** Start one background subagent per request, with the request line and the
    worker brief below. Tell the user in one line, for example "@bond picked up #42 from @miles".
-4. **Keep listening.**
+4. **Keep listening.** Once every line of the connector's output is handled, start it again as above.
 
 ## Worker brief
 
