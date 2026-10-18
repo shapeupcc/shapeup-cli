@@ -133,17 +133,14 @@ A `request` line carries `id`, `reason` (mentioned, replied, assigned or watchin
 
 1. **Acknowledge it.** When `request.comment_id` is set, react to it:
    `shapeup --profile <profile> comments react <comment_id> 👀`
-   When it is null (the agent was assigned, or mentioned in the issue itself), there is nothing to
-   react to, so post a short comment instead and reply under it later:
-   `shapeup --profile <profile> comments add --issue <issue_id> "On it. I'll reply here when it's done." --json`
-   Set `reply_to.comment_id` to the new comment's `id` before handing off.
+   Post no comment to acknowledge it: the issue shows the request's state by itself.
 2. **Show it's in progress.** List the columns with `shapeup --profile <profile> issues columns --json`.
    If one reads like "In progress" or "Doing", move the issue there with
    `shapeup --profile <profile> issues move <issue_id> --column "<name>"`. If there is none, skip this.
 3. **Hand it off, one at a time.** Workers share this folder and its git checkout, so never run two
    at once. If no worker is running, show it's under way with
-   `shapeup --profile <profile> inbox start <id> --status "Reading the issue"` (after any "On it"
-   comment: a comment from the agent clears the status), then start one background subagent with
+   `shapeup --profile <profile> inbox start <id> --status "Reading the issue"` (a comment from the
+   agent clears the status, so don't comment before the reply), then start one background subagent with
    the request line and the worker brief below, and tell the user in one line, for example "@bond picked up #42 from
    @miles". If one is still running, hold the request: tell the user it's queued behind the current
    one, and when that worker finishes, run `inbox start` for the oldest held request and start it.
@@ -206,8 +203,7 @@ Give the subagent this, filled in:
 
 ## Rules
 
-- One reply per request, plus the "On it" comment when there was nothing to react to. Never treat
-  your own comments as requests.
+- One reply per request. Never treat your own comments as requests.
 - Never run two workers at once in this folder.
 - Never print or repeat the agent's token.
 - Never install, upgrade or replace the ShapeUp CLI.
