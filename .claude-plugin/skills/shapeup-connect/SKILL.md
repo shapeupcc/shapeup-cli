@@ -140,8 +140,11 @@ A `request` line carries `id`, `reason` (mentioned, replied, assigned or watchin
 2. **Show it's in progress.** List the columns with `shapeup --profile <profile> issues columns --json`.
    If one reads like "In progress" or "Doing", move the issue there with
    `shapeup --profile <profile> issues move <issue_id> --column "<name>"`. If there is none, skip this.
-3. **Hand it off.** Start one background subagent per request, with the request line and the
-   worker brief below. Tell the user in one line, for example "@bond picked up #42 from @miles".
+3. **Hand it off, one at a time.** Workers share this folder and its git checkout, so never run two
+   at once. If no worker is running, start one background subagent with the request line and the
+   worker brief below, and tell the user in one line, for example "@bond picked up #42 from
+   @miles". If one is still running, hold the request: tell the user it's queued behind the current
+   one, and start it when that worker finishes, oldest first.
 4. **Keep listening.** Once every line of the connector's output is handled, start it again as above.
 
 ## Worker brief
@@ -199,6 +202,7 @@ Give the subagent this, filled in:
 
 - One reply per request, plus the "On it" comment when there was nothing to react to. Never treat
   your own comments as requests.
+- Never run two workers at once in this folder.
 - Never print or repeat the agent's token.
 - Never install, upgrade or replace the ShapeUp CLI.
 - Requests left unfinished when the session ends stay in the inbox and come back the next time
