@@ -141,10 +141,12 @@ A `request` line carries `id`, `reason` (mentioned, replied, assigned or watchin
    If one reads like "In progress" or "Doing", move the issue there with
    `shapeup --profile <profile> issues move <issue_id> --column "<name>"`. If there is none, skip this.
 3. **Hand it off, one at a time.** Workers share this folder and its git checkout, so never run two
-   at once. If no worker is running, start one background subagent with the request line and the
-   worker brief below, and tell the user in one line, for example "@bond picked up #42 from
+   at once. If no worker is running, show it's under way with
+   `shapeup --profile <profile> inbox start <id> --status "Reading the issue"` (after any "On it"
+   comment: a comment from the agent clears the status), then start one background subagent with
+   the request line and the worker brief below, and tell the user in one line, for example "@bond picked up #42 from
    @miles". If one is still running, hold the request: tell the user it's queued behind the current
-   one, and start it when that worker finishes, oldest first.
+   one, and when that worker finishes, run `inbox start` for the oldest held request and start it.
 4. **Keep listening.** Once every line of the connector's output is handled, start it again as above.
 
 ## Worker brief
@@ -165,7 +167,11 @@ Give the subagent this, filled in:
 > 4. If the ask is unclear or you are blocked, ask on the issue rather than guess. If the issue is
 >    clearly about a different product or codebase than this repository, say so on the issue and
 >    stop.
-> 5. If the work changes anything people see, compare it the way a careful reviewer would:
+> 5. Keep the issue showing what you're doing: at each step (writing the change, running the
+>    tests, taking screenshots), and at least every 20 minutes, run
+>    `shapeup --profile <profile> inbox start <id> --status "<a few words>"`. After 30 minutes
+>    without one, the issue says you stopped responding.
+> 6. If the work changes anything people see, compare it the way a careful reviewer would:
 >    - From your diff, list the screens and states it touches, including the ones it could break.
 >    - Run the main branch beside yours: check main out into a git worktree outside this
 >      repository and start it on a second port, so both are up at once. How to start and sign in
@@ -174,7 +180,7 @@ Give the subagent this, filled in:
 >      the same content, plus a phone width and dark mode where they matter. Save PNGs outside the
 >      repository, named for what they show.
 >    - Stop the second server and remove the worktree when you're done.
-> 6. Reply once, under the comment that asked:
+> 7. Reply once, under the comment that asked:
 >    `shapeup --profile <profile> comments add --issue <issue.id> --parent <reply_to.comment_id> "<reply>"`
 >    (leave out `--parent` when `reply_to.comment_id` is null). Start with `@<requester.name>`,
 >    then say what changed, the branch and commit, and how you checked it. Keep it plain.
@@ -195,8 +201,8 @@ Give the subagent this, filled in:
 >    people who can't see it, so say what it shows; the quoted word is its caption. End with a
 >    `## Worth a look` section for anything that seems off, and mention whoever the requester asked
 >    you to hand over to.
-> 7. Then take it out of the inbox: `shapeup --profile <profile> inbox done <id>`.
-> 8. Report back in one line.
+> 8. Then take it out of the inbox: `shapeup --profile <profile> inbox done <id>`.
+> 9. Report back in one line.
 
 ## Rules
 

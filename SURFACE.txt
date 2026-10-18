@@ -125,6 +125,7 @@ SUB shapeup cycle list
 SUB shapeup cycle show
 SUB shapeup inbox done
 SUB shapeup inbox list
+SUB shapeup inbox start
 SUB shapeup issues add-to-pitch
 SUB shapeup issues assign
 SUB shapeup issues close
