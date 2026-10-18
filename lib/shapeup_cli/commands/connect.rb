@@ -18,7 +18,8 @@ module ShapeupCli
             { name: "trust", type: "string", usage: "Whose requests to pass on: owner (default) or members" },
             { name: "once", type: "bool", usage: "Check once and exit" },
             { name: "until-request", type: "bool", usage: "Exit after the first check that passes on a request, remembering what was handed out" },
-            { name: "fresh", type: "bool", usage: "With --until-request, forget what earlier runs handed out" }
+            { name: "fresh", type: "bool", usage: "With --until-request, forget what earlier runs handed out" },
+            { name: "here", type: "bool", usage: "Use this folder even though another of your agents last listened in it" }
           ],
           examples: [
             "shapeup connect",
@@ -37,6 +38,7 @@ module ShapeupCli
         once = consume_flag("--once")
         @until_request = consume_flag("--until-request")
         @fresh = consume_flag("--fresh")
+        @here = consume_flag("--here")
 
         $stdout.sync = true
         @profile, @agent_client = keep_trying(forever: !once) { sign_in_as_agent(handle) }
@@ -136,8 +138,33 @@ module ShapeupCli
         end
 
         def announce(agent)
-          emit(type: "connected", agent: agent, profile: @profile, organisation_id: org_id.to_s, trust: @trust, interval: @interval)
+          claim_folder(agent)
+          emit(type: "connected", agent: agent, profile: @profile, organisation_id: org_id.to_s, trust: @trust, interval: @interval, folder: Dir.pwd)
           @connected = true
+        end
+
+        def claim_folder(agent)
+          folders = read_folders
+          previous = folders[Dir.pwd]
+
+          if previous && previous != agent["name"] && !@here
+            emit(type: "error", code: "folder", retryable: false, folder: Dir.pwd, last_used_by: previous,
+              message: "@#{previous} last listened in this folder. Run again with --here to use it for @#{agent["name"]} instead.")
+            exit EXIT_USAGE
+          end
+
+          FileUtils.mkdir_p(File.dirname(folders_path))
+          File.write(folders_path, JSON.pretty_generate(folders.merge(Dir.pwd => agent["name"])))
+        end
+
+        def folders_path
+          File.join(Config::CONFIG_DIR, "connect", "folders.json")
+        end
+
+        def read_folders
+          JSON.parse(File.read(folders_path))
+        rescue Errno::ENOENT, JSON::ParserError
+          {}
         end
 
         def trusted?(requester, agent)

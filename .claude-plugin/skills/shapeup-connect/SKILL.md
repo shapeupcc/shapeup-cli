@@ -122,7 +122,7 @@ when your last turn ended in an error. Every line is one JSON event:
 | `connected` | The first time, tell the user the agent is listening; after a restart, say nothing. Note `profile`: from now on, run every ShapeUp command for this agent as `shapeup --profile <profile> ...` (leave out `--profile` when it is null). |
 | `request` | Handle it, below. |
 | `ignored` | Tell the user in one line who asked and that they are not trusted. Do nothing else. |
-| `error` | Nothing while `retryable` is true: the connector keeps retrying by itself, pausing longer each time, up to two minutes. Otherwise tell the user the `message`. If the connector exits after a network error (`code` is `network`, or the message mentions a connection), wait a minute and restart it; give up and tell the user after five restarts in a row that never reach `connected`. For any other exit, restart it once. |
+| `error` | If `code` is `folder`, another of the user's agents last listened in this folder: ask the user whether this folder is right for this agent, and only if they say yes, start again with `--here`. Otherwise, nothing while `retryable` is true: the connector keeps retrying by itself, pausing longer each time, up to two minutes. Otherwise tell the user the `message`. If the connector exits after a network error (`code` is `network`, or the message mentions a connection), wait a minute and restart it; give up and tell the user after five restarts in a row that never reach `connected`. For any other exit, restart it once. |
 
 Don't poll the inbox yourself. The connector does that.
 
@@ -159,7 +159,9 @@ Give the subagent this, filled in:
 >    `agent/<issue.id>-<short-slug>` from the latest default branch on the remote (for example
 >    `origin/main`), not from whatever is checked out, and commit there. Never push, deploy, merge or delete branches unless the owner said so in this
 >    session.
-> 4. If the ask is unclear or you are blocked, ask on the issue rather than guess.
+> 4. If the ask is unclear or you are blocked, ask on the issue rather than guess. If the issue is
+>    clearly about a different product or codebase than this repository, say so on the issue and
+>    stop.
 > 5. If the work changes anything people see, compare it the way a careful reviewer would:
 >    - From your diff, list the screens and states it touches, including the ones it could break.
 >    - Run the main branch beside yours: check main out into a git worktree outside this

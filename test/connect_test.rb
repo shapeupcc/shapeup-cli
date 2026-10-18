@@ -32,6 +32,7 @@ class ConnectTest < Minitest::Test
   def connect(argv, client)
     command = ShapeupCli::Commands::Connect.new(argv + [ "--once", "--org", "1" ])
     command.define_singleton_method(:client) { client }
+    keep_folders_apart(command)
 
     out, _err = capture_io { command.execute }
     out.lines.map { |line| JSON.parse(line) }
@@ -108,61 +109,79 @@ class ConnectTest < Minitest::Test
     connect.define_method(:execute, original)
   end
 
-def test_rides_out_dropped_connections_and_announces_itself_once_through
-  client = as_agent([ item(11, 1, "miles") ])
-  dropped = Set.new
-  reliable = client.method(:call_tool)
-  client.define_singleton_method(:call_tool) do |name, **args|
-    raise ShapeupCli::Client::NetworkError, "Couldn't reach (Errno::ECONNRESET)." if dropped.add?(name)
-    reliable.call(name, **args)
+  def test_rides_out_dropped_connections_and_announces_itself_once_through
+    client = as_agent([ item(11, 1, "miles") ])
+    dropped = Set.new
+    reliable = client.method(:call_tool)
+    client.define_singleton_method(:call_tool) do |name, **args|
+      raise ShapeupCli::Client::NetworkError, "Couldn't reach (Errno::ECONNRESET)." if dropped.add?(name)
+      reliable.call(name, **args)
+    end
+
+    command = ShapeupCli::Commands::Connect.new([ "--org", "1" ])
+    command.define_singleton_method(:client) { client }
+    keep_folders_apart(command)
+    pauses = []
+    command.define_singleton_method(:pause) { |seconds| pauses << seconds; throw :stop if pauses.size == 3 }
+
+    out, _err = capture_io { catch(:stop) { command.execute } }
+    events = out.lines.map { |line| JSON.parse(line) }
+
+    assert_equal %w[ error error connected request ], events.map { |e| e["type"] }
+    assert events.first(2).all? { |e| e["retryable"] }
+    assert_equal 5, events.first["retrying_in"]
+    assert_equal [ 5, 30, 30 ], pauses
   end
 
-  command = ShapeupCli::Commands::Connect.new([ "--org", "1" ])
-  command.define_singleton_method(:client) { client }
-  pauses = []
-  command.define_singleton_method(:pause) { |seconds| pauses << seconds; throw :stop if pauses.size == 3 }
+  def test_once_gives_up_when_it_cannot_sign_in
+    client = Object.new
+    client.define_singleton_method(:call_tool) { |*, **| raise ShapeupCli::Client::NetworkError, "Couldn't reach" }
 
-  out, _err = capture_io { catch(:stop) { command.execute } }
-  events = out.lines.map { |line| JSON.parse(line) }
+    assert_raises(ShapeupCli::Client::NetworkError) { connect([], client) }
+  end
 
-  assert_equal %w[ error error connected request ], events.map { |e| e["type"] }
-  assert events.first(2).all? { |e| e["retryable"] }
-  assert_equal 5, events.first["retrying_in"]
-  assert_equal [ 5, 30, 30 ], pauses
-end
+  def test_until_request_stops_once_a_request_is_passed_on
+    events, pauses = run_until_request([ "--until-request", "--fresh" ], as_agent([ item(11, 1, "miles") ]))
 
-def test_once_gives_up_when_it_cannot_sign_in
-  client = Object.new
-  client.define_singleton_method(:call_tool) { |*, **| raise ShapeupCli::Client::NetworkError, "Couldn't reach" }
+    assert_equal %w[ connected request ], events.map { |e| e["type"] }
+    assert_empty pauses
+  end
 
-  assert_raises(ShapeupCli::Client::NetworkError) { connect([], client) }
-end
+  def test_until_request_remembers_what_it_handed_out_until_fresh
+    inbox = as_agent([ item(11, 1, "miles") ])
+    run_until_request([ "--until-request", "--fresh" ], inbox)
 
-def test_until_request_stops_once_a_request_is_passed_on
-  events, pauses = run_until_request([ "--until-request", "--fresh" ], as_agent([ item(11, 1, "miles") ]))
+    events, pauses = run_until_request([ "--until-request" ], inbox)
+    assert_equal %w[ connected ], events.map { |e| e["type"] }
+    assert_equal [ 30 ], pauses
 
-  assert_equal %w[ connected request ], events.map { |e| e["type"] }
-  assert_empty pauses
-end
+    events, _ = run_until_request([ "--until-request", "--fresh" ], inbox)
+    assert_equal %w[ connected request ], events.map { |e| e["type"] }
+  end
 
-def test_until_request_remembers_what_it_handed_out_until_fresh
-  inbox = as_agent([ item(11, 1, "miles") ])
-  run_until_request([ "--until-request", "--fresh" ], inbox)
+  def test_until_request_forgets_requests_that_have_left_the_inbox
+    run_until_request([ "--until-request", "--fresh" ], as_agent([ item(11, 1, "miles") ]))
+    run_until_request([ "--until-request" ], as_agent([]))
 
-  events, pauses = run_until_request([ "--until-request" ], inbox)
-  assert_equal %w[ connected ], events.map { |e| e["type"] }
-  assert_equal [ 30 ], pauses
+    assert_equal [], JSON.parse(File.read(handed_out_file))
+  end
 
-  events, _ = run_until_request([ "--until-request", "--fresh" ], inbox)
-  assert_equal %w[ connected request ], events.map { |e| e["type"] }
-end
+  def test_refuses_a_folder_another_of_your_agents_listened_in_until_told_here
+    FileUtils.mkdir_p(File.dirname(folders_file))
+    File.write(folders_file, JSON.generate(Dir.pwd => "q"))
+    inbox = as_agent([ item(11, 1, "miles") ])
 
-def test_until_request_forgets_requests_that_have_left_the_inbox
-  run_until_request([ "--until-request", "--fresh" ], as_agent([ item(11, 1, "miles") ]))
-  run_until_request([ "--until-request" ], as_agent([]))
+    command = ShapeupCli::Commands::Connect.new([ "--once", "--org", "1" ])
+    command.define_singleton_method(:client) { inbox }
+    keep_folders_apart(command)
+    out, _err = capture_io do
+      assert_equal ShapeupCli::EXIT_USAGE, assert_raises(SystemExit) { command.execute }.status
+    end
+    assert_equal [ "error", "folder", "q", false ], JSON.parse(out.lines.last).values_at("type", "code", "last_used_by", "retryable")
 
-  assert_equal [], JSON.parse(File.read(handed_out_file))
-end
+    assert_equal %w[ connected request ], connect([ "--here" ], inbox).map { |e| e["type"] }
+    assert_equal "bond", JSON.parse(File.read(folders_file))[Dir.pwd]
+  end
 
   def test_rejects_an_unknown_trust_level
     assert_raises(SystemExit) do
@@ -170,22 +189,32 @@ end
     end
   end
 
-private
-  def run_until_request(argv, client)
-    command = ShapeupCli::Commands::Connect.new(argv + [ "--org", "1" ])
-    command.define_singleton_method(:client) { client }
-    file = handed_out_file
-    command.define_singleton_method(:handed_out_path) { |_agent| file }
-    pauses = []
-    command.define_singleton_method(:pause) { |seconds| pauses << seconds; throw :stop }
+  private
+    def run_until_request(argv, client)
+      command = ShapeupCli::Commands::Connect.new(argv + [ "--org", "1" ])
+      command.define_singleton_method(:client) { client }
+      file = handed_out_file
+      command.define_singleton_method(:handed_out_path) { |_agent| file }
+      keep_folders_apart(command)
+      pauses = []
+      command.define_singleton_method(:pause) { |seconds| pauses << seconds; throw :stop }
 
-    out, _err = capture_io { catch(:stop) { command.execute } }
-    [ out.lines.map { |line| JSON.parse(line) }, pauses ]
-  end
+      out, _err = capture_io { catch(:stop) { command.execute } }
+      [ out.lines.map { |line| JSON.parse(line) }, pauses ]
+    end
 
-  def handed_out_file
-    @handed_out_file ||= File.join(Dir.mktmpdir, "connect", "bond.json")
-  end
+    def handed_out_file
+      @handed_out_file ||= File.join(Dir.mktmpdir, "connect", "bond.json")
+    end
+
+    def keep_folders_apart(command)
+      folders = folders_file
+      command.define_singleton_method(:folders_path) { folders }
+    end
+
+    def folders_file
+      @folders_file ||= File.join(Dir.mktmpdir, "connect", "folders.json")
+    end
 
     def stubbing(object, method, value)
       original = object.method(method)

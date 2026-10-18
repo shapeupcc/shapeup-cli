@@ -46,6 +46,7 @@ FLAG shapeup comments --scope string
 FLAG shapeup comments --task string
 FLAG shapeup connect --as string
 FLAG shapeup connect --fresh bool
+FLAG shapeup connect --here bool
 FLAG shapeup connect --interval integer
 FLAG shapeup connect --once bool
 FLAG shapeup connect --trust string
