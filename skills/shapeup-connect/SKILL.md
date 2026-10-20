@@ -146,6 +146,9 @@ asked on as one of `issue`, `pitch`, `scope` or `task` (a scope or task also nam
    @miles". If one is still running, hold the request: tell the user it's queued behind the current
    one, and when that worker finishes, run `inbox start` for the oldest held request and start it.
 4. **Keep listening.** Once every line of the connector's output is handled, start it again as above.
+5. **Recover a failed worker.** If a worker fails or stops early (for example an API or network
+   error), start it again once for the same request, telling it to carry on from its branch as it
+   is. Whenever you wake, for any reason, first restart any worker that failed while you couldn't.
 
 ## Worker brief
 
