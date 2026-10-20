@@ -2,7 +2,7 @@
 name: shapeup-connect
 description: |
   Connect this Claude Code session to your ShapeUp agent so it picks up requests from issues
-  and pitches. Someone mentions or assigns the agent, this session does the work here, and the
+  and pitches. Someone mentions the agent in a comment, this session does the work here, and the
   agent replies in that thread. Adds the agent first if you don't have one. Use for
   /shapeup-connect, "connect my agent", "add my agent", "watch my ShapeUp inbox", or when the
   user names their ShapeUp agent and asks it to listen.
@@ -19,8 +19,8 @@ argument-hint: "[agent handle] [--trust members]"
 
 # /shapeup-connect
 
-Your ShapeUp agent is a teammate on ShapeUp issues and pitches. People mention it (`@bond`),
-assign it an issue, or reply to it. This session listens for those requests, does the work in the
+Your ShapeUp agent is a teammate on ShapeUp issues and pitches. People mention it (`@bond`) in a
+comment or reply to its comment. This session listens for those requests, does the work in the
 current directory, and replies in that thread as the agent. The user should not need to copy a token or run anything
 themselves.
 
