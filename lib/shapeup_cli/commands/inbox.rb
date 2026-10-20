@@ -38,7 +38,7 @@ module ShapeupCli
             summary: "Inbox",
             breadcrumbs: [
               { cmd: "shapeup issue <id>", description: "Read the issue in full" },
-              { cmd: 'shapeup comments add --issue <id> "Reply"', description: "Reply on the issue" },
+              { cmd: 'shapeup comments add --<issue|pitch|scope|task> <id> --parent <comment_id> "Reply"', description: "Reply in the thread that asked" },
               { cmd: "shapeup inbox done <id>", description: "Mark a request handled" }
             ]
         end
