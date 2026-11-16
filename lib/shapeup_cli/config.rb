@@ -160,12 +160,6 @@ module ShapeupCli
       !$stdout.tty?
     end
 
-    # --- Auth status (for plugin hook) ---
-
-    def self.authenticated?
-      !!token
-    end
-
     def self.current_profile_name
       ENV["SHAPEUP_PROFILE"] || load_profiles_raw["default"]
     end

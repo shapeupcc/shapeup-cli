@@ -6,6 +6,17 @@ require "tmpdir"
 class ConnectTest < Minitest::Test
   AGENT = { "id" => 9, "name" => "bond", "owner" => { "id" => 1, "name" => "miles" } }.freeze
 
+  def setup
+    @skill_states = { "shapeup" => :current, "shapeup-connect" => :current }
+    @original_skill_states = ShapeupCli::Commands::Setup.method(:claude_skill_states)
+    test = self
+    ShapeupCli::Commands::Setup.define_singleton_method(:claude_skill_states) { test.instance_variable_get(:@skill_states) }
+  end
+
+  def teardown
+    ShapeupCli::Commands::Setup.define_singleton_method(:claude_skill_states, @original_skill_states)
+  end
+
   def item(id, requester_id, requester_name)
     {
       "id" => id.to_s,
@@ -226,17 +237,25 @@ class ConnectTest < Minitest::Test
     assert_includes events.last["after_compaction"], "reload after compaction"
   end
 
+  def test_an_older_connect_skill_is_never_told_to_reload_with_an_argument_it_doesnt_know
+    @skill_states = { "shapeup" => :current, "shapeup-connect" => :stale }
+    events = connect([], as_agent([ item(11, 1, "miles") ]))
+
+    assert_equal "request", events.last["type"]
+    refute events.last.key?("after_compaction")
+  end
+
   def test_says_when_the_installed_skills_dont_match_this_cli
-    stale = { "shapeup" => :current, "shapeup-connect" => :stale }
-    events = stubbing(ShapeupCli::Commands::Setup, :claude_skill_states, stale) { connect([], as_agent([])) }
+    @skill_states = { "shapeup" => :current, "shapeup-connect" => :stale }
+    events = connect([], as_agent([]))
 
     assert_includes events.first["update"], "shapeup-connect skill doesn't match shapeup #{ShapeupCli::VERSION}"
     assert_includes events.first["update"], "shapeup setup claude"
   end
 
   def test_says_nothing_about_skills_that_match_or_were_never_installed
-    states = { "shapeup" => :current, "shapeup-connect" => :missing }
-    events = stubbing(ShapeupCli::Commands::Setup, :claude_skill_states, states) { connect([], as_agent([])) }
+    @skill_states = { "shapeup" => :current, "shapeup-connect" => :missing }
+    events = connect([], as_agent([]))
 
     refute events.first.key?("update")
   end

@@ -10,8 +10,13 @@ module ShapeupCli
       def self.claude_skill_states
         SKILL_NAMES.to_h do |name|
           installed = File.join(Dir.home, ".claude", "skills", name, "SKILL.md")
-          current = File.exist?(installed) && File.read(installed) == File.read(File.join(SKILLS_DIR, name, "SKILL.md"))
-          [ name, File.exist?(installed) ? (current ? :current : :stale) : :missing ]
+          state = if !File.file?(installed) then :missing
+          elsif File.read(installed) == File.read(File.join(SKILLS_DIR, name, "SKILL.md")) then :current
+          else :stale
+          end
+          [ name, state ]
+        rescue SystemCallError
+          [ name, :missing ]
         end
       end
 

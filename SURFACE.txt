@@ -114,7 +114,6 @@ SUB shapeup comments edit
 SUB shapeup comments list
 SUB shapeup comments react
 SUB shapeup comments remove
-SUB shapeup comments unreact
 SUB shapeup config explain
 SUB shapeup config init
 SUB shapeup config set

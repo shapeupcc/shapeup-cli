@@ -109,7 +109,7 @@ module ShapeupCli
             next unless @handed_out.add?(item["id"])
 
             if trusted?(item["requester"], agent)
-              emit(type: "request", **item.transform_keys(&:to_sym), acknowledged: acknowledge(item), after_compaction: AFTER_COMPACTION)
+              emit(type: "request", **item.transform_keys(&:to_sym), acknowledged: acknowledge(item), **compaction_hint)
               @requested = @until_request
             else
               emit(type: "ignored", id: item["id"], requester: item["requester"], why: "#{item["requester"]["name"]} is not trusted (--trust #{@trust})")
@@ -154,12 +154,17 @@ module ShapeupCli
 
         def announce(agent)
           claim_folder(agent)
+          @skill_states = Setup.claude_skill_states
           emit(type: "connected", agent: agent, profile: @profile, organisation_id: org_id.to_s, trust: @trust, interval: @interval, folder: Dir.pwd, **skills_update)
           @connected = true
         end
 
+        def compaction_hint
+          @skill_states["shapeup-connect"] == :stale ? {} : { after_compaction: AFTER_COMPACTION }
+        end
+
         def skills_update
-          stale = Setup.claude_skill_states.select { |_, state| state == :stale }.keys
+          stale = @skill_states.select { |_, state| state == :stale }.keys
           return {} if stale.empty?
 
           { update: "The installed #{stale.join(" and ")} #{stale.one? ? "skill doesn't" : "skills don't"} match shapeup #{VERSION}. Run `shapeup setup claude`, then start a new session." }

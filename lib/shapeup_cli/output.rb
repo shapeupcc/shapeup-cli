@@ -198,7 +198,7 @@ module ShapeupCli
       puts "| #{keys.map { |_| "---" }.join(" | ")} |"
 
       # Rows
-      items.each do |item|
+      rows.each do |item|
         values = keys.map { |k| truncate(item[k].to_s, 40) }
         puts "| #{values.join(" | ")} |"
       end

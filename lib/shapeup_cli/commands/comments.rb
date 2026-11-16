@@ -13,8 +13,7 @@ module ShapeupCli
             { name: "add", short: "Add a comment", path: 'shapeup comments add --issue <id> "Comment text"' },
             { name: "edit", short: "Edit your own comment", path: 'shapeup comments edit <comment_id> "New text"' },
             { name: "remove", short: "Delete your own comment", path: "shapeup comments remove <comment_id>" },
-            { name: "react", short: "React to a comment with an emoji", path: "shapeup comments react <comment_id> <emoji>" },
-            { name: "unreact", short: "Take back your emoji reaction", path: "shapeup comments unreact <comment_id> <emoji>" }
+            { name: "react", short: "React to a comment with an emoji", path: "shapeup comments react <comment_id> <emoji>" }
           ],
           flags: [
             { name: "issue", type: "string", usage: "Issue ID" },
@@ -43,7 +42,6 @@ module ShapeupCli
         when "edit"   then edit
         when "remove" then remove
         when "react"  then react
-        when "unreact" then unreact
         when "list", nil then list
         else list
         end
@@ -106,15 +104,6 @@ module ShapeupCli
           result = call_tool("add_reaction", comment_id: comment_id.to_s, emoji: emoji)
 
           render result, summary: "Reacted #{emoji} to comment ##{comment_id}"
-        end
-
-        def unreact
-          comment_id = positional_arg(1) || abort("Usage: shapeup comments unreact <comment_id> <emoji>")
-          emoji = positional_arg(2) || abort("Usage: shapeup comments unreact <comment_id> <emoji>")
-
-          result = call_tool("remove_reaction", comment_id: comment_id.to_s, emoji: emoji)
-
-          render result, summary: "Took back #{emoji} on comment ##{comment_id}"
         end
 
         IMAGE_TYPES = { ".png" => "image/png", ".jpg" => "image/jpeg", ".jpeg" => "image/jpeg", ".gif" => "image/gif", ".webp" => "image/webp" }.freeze

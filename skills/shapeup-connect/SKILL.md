@@ -197,9 +197,6 @@ Give the subagent this, filled in:
 >    `shapeup --profile <profile> comments add --<kind> <id> --parent <reply_to.comment_id> "<reply>"`
 >    (leave out `--parent` when `reply_to.comment_id` is null). Start with `@<requester.name>`,
 >    then say what changed, the branch and commit, and how you checked it. Keep it plain.
->    When the request line's `acknowledged` is true, take the 👀 back in the same command, after
->    the reply, so it only goes once the reply has landed:
->    `... "<reply>" && shapeup --profile <profile> comments unreact <request.comment_id> 👀`
 >
 >    When you have screenshots, write the rest like a review: a `## heading` per area, a line on
 >    what changed there, then its before and after as local Markdown images on consecutive lines,
