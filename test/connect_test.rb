@@ -24,6 +24,7 @@ class ConnectTest < Minitest::Test
     client.define_singleton_method(:call_tool) do |name, **args|
       calls << [ name, args ]
       payload = responses.fetch(name) { raise "unexpected tool #{name}" }
+      payload = payload.call if payload.respond_to?(:call)
       { "content" => [ { "type" => "text", "text" => JSON.generate(payload) } ] }
     end
     client
@@ -41,7 +42,8 @@ class ConnectTest < Minitest::Test
   def as_agent(items)
     fake_client(
       "list_my_agents" => { "signed_in_as_agent" => true, "agents" => [], "can_add" => false },
-      "list_inbox" => { "agent" => AGENT, "items" => items, "count" => items.size }
+      "list_inbox" => { "agent" => AGENT, "items" => items, "count" => items.size },
+      "add_reaction" => { "message" => "Reaction added" }
     )
   end
 
@@ -187,6 +189,35 @@ class ConnectTest < Minitest::Test
     assert_raises(SystemExit) do
       capture_io { ShapeupCli::Commands::Connect.new([ "--trust", "everyone", "--once" ]).execute }
     end
+  end
+
+  def test_acknowledges_a_request_as_the_agent_and_says_so_on_the_line
+    client = as_agent([ item(11, 1, "miles") ])
+    events = connect([], client)
+
+    assert_includes client.calls, [ "add_reaction", { organisation: "1", comment_id: "7", emoji: "👀" } ]
+    assert_equal true, events.last["acknowledged"]
+  end
+
+  def test_a_failed_acknowledgement_still_passes_the_request_on
+    client = fake_client(
+      "list_my_agents" => { "signed_in_as_agent" => true },
+      "list_inbox" => { "agent" => AGENT, "items" => [ item(11, 1, "miles") ] },
+      "add_reaction" => -> { raise ShapeupCli::Client::ApiError, "Comment not found" }
+    )
+
+    events = connect([], client)
+
+    assert_equal "request", events.last["type"]
+    assert_equal false, events.last["acknowledged"]
+  end
+
+  def test_a_request_without_a_comment_is_not_acknowledged
+    client = as_agent([ item(11, 1, "miles").merge("request" => { "comment_id" => nil, "content" => "@bond have a look" }) ])
+    events = connect([], client)
+
+    refute client.calls.any? { |name, _| name == "add_reaction" }
+    assert_equal false, events.last["acknowledged"]
   end
 
   private

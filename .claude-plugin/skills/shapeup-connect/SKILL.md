@@ -130,10 +130,13 @@ Don't poll the inbox yourself. The connector does that.
 
 A `request` line carries `id`, `reason` (mentioned, replied, assigned or watching), what it was
 asked on as one of `issue`, `pitch`, `scope` or `task` (a scope or task also names its `pitch`), `request`
-(the words that asked), `requester` and `reply_to`.
+(the words that asked), `requester`, `reply_to` and `acknowledged`.
 
-1. **Acknowledge it.** When `request.comment_id` is set, react to it:
-   `shapeup --profile <profile> comments react <comment_id> 👀`
+1. **Acknowledge it, only if the connector didn't.** The connector reacts 👀 as the agent before it
+   passes a request on, and says so with `acknowledged`. If `acknowledged` is true or false, skip
+   this step: false means the reaction failed or there was no comment to react to, so don't try
+   again. Only when `acknowledged` is missing (an older CLI) and `request.comment_id` is set, react
+   yourself: `shapeup --profile <profile> comments react <comment_id> 👀`
    Post no comment to acknowledge it: an issue shows the request's state by itself.
 2. **Show it's in progress,** for a request on an issue only. List the columns with `shapeup --profile <profile> issues columns --json`.
    If one reads like "In progress" or "Doing", move the issue there with
@@ -190,6 +193,9 @@ Give the subagent this, filled in:
 >    `shapeup --profile <profile> comments add --<kind> <id> --parent <reply_to.comment_id> "<reply>"`
 >    (leave out `--parent` when `reply_to.comment_id` is null). Start with `@<requester.name>`,
 >    then say what changed, the branch and commit, and how you checked it. Keep it plain.
+>    When the request line's `acknowledged` is true, take the 👀 back in the same command, after
+>    the reply, so it only goes once the reply has landed:
+>    `... "<reply>" && shapeup --profile <profile> comments unreact <request.comment_id> 👀`
 >
 >    When you have screenshots, write the rest like a review: a `## heading` per area, a line on
 >    what changed there, then its before and after as local Markdown images on consecutive lines,

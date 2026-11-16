@@ -109,7 +109,7 @@ module ShapeupCli
             next unless @handed_out.add?(item["id"])
 
             if trusted?(item["requester"], agent)
-              emit(type: "request", **item.transform_keys(&:to_sym))
+              emit(type: "request", **item.transform_keys(&:to_sym), acknowledged: acknowledge(item))
               @requested = @until_request
             else
               emit(type: "ignored", id: item["id"], requester: item["requester"], why: "#{item["requester"]["name"]} is not trusted (--trust #{@trust})")
@@ -119,6 +119,18 @@ module ShapeupCli
           write_handed_out(agent, inbox["items"].map { |item| item["id"] }) if @until_request
         rescue Client::NetworkError, Client::RateLimitError => error
           emit(type: "error", message: error.message, retryable: true)
+        end
+
+        ACKNOWLEDGEMENT = "👀"
+
+        def acknowledge(item)
+          comment_id = item.dig("request", "comment_id") or return false
+
+          @agent_client.call_tool("add_reaction", organisation: org_id.to_s, comment_id: comment_id.to_s, emoji: ACKNOWLEDGEMENT)
+          true
+        rescue Client::ApiError => error
+          $stderr.puts "Couldn't acknowledge request #{item["id"]}: #{error.message}"
+          false
         end
 
         def handed_out_path(agent)
