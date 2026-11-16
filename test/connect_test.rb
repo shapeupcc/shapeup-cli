@@ -24,6 +24,7 @@ class ConnectTest < Minitest::Test
     client.define_singleton_method(:call_tool) do |name, **args|
       calls << [ name, args ]
       payload = responses.fetch(name) { raise "unexpected tool #{name}" }
+      payload = payload.call if payload.respond_to?(:call)
       { "content" => [ { "type" => "text", "text" => JSON.generate(payload) } ] }
     end
     client
@@ -41,7 +42,8 @@ class ConnectTest < Minitest::Test
   def as_agent(items)
     fake_client(
       "list_my_agents" => { "signed_in_as_agent" => true, "agents" => [], "can_add" => false },
-      "list_inbox" => { "agent" => AGENT, "items" => items, "count" => items.size }
+      "list_inbox" => { "agent" => AGENT, "items" => items, "count" => items.size },
+      "add_reaction" => { "message" => "Reaction added" }
     )
   end
 
@@ -187,6 +189,56 @@ class ConnectTest < Minitest::Test
     assert_raises(SystemExit) do
       capture_io { ShapeupCli::Commands::Connect.new([ "--trust", "everyone", "--once" ]).execute }
     end
+  end
+
+  def test_acknowledges_a_request_as_the_agent_and_says_so_on_the_line
+    client = as_agent([ item(11, 1, "miles") ])
+    events = connect([], client)
+
+    assert_includes client.calls, [ "add_reaction", { organisation: "1", comment_id: "7", emoji: "👀" } ]
+    assert_equal true, events.last["acknowledged"]
+  end
+
+  def test_a_failed_acknowledgement_still_passes_the_request_on
+    client = fake_client(
+      "list_my_agents" => { "signed_in_as_agent" => true },
+      "list_inbox" => { "agent" => AGENT, "items" => [ item(11, 1, "miles") ] },
+      "add_reaction" => -> { raise ShapeupCli::Client::ApiError, "Comment not found" }
+    )
+
+    events = connect([], client)
+
+    assert_equal "request", events.last["type"]
+    assert_equal false, events.last["acknowledged"]
+  end
+
+  def test_a_request_without_a_comment_is_not_acknowledged
+    client = as_agent([ item(11, 1, "miles").merge("request" => { "comment_id" => nil, "content" => "@bond have a look" }) ])
+    events = connect([], client)
+
+    refute client.calls.any? { |name, _| name == "add_reaction" }
+    assert_equal false, events.last["acknowledged"]
+  end
+
+  def test_every_request_says_how_to_recover_the_skill_after_a_compaction
+    events = connect([], as_agent([ item(11, 1, "miles") ]))
+
+    assert_includes events.last["after_compaction"], "reload after compaction"
+  end
+
+  def test_says_when_the_installed_skills_dont_match_this_cli
+    stale = { "shapeup" => :current, "shapeup-connect" => :stale }
+    events = stubbing(ShapeupCli::Commands::Setup, :claude_skill_states, stale) { connect([], as_agent([])) }
+
+    assert_includes events.first["update"], "shapeup-connect skill doesn't match shapeup #{ShapeupCli::VERSION}"
+    assert_includes events.first["update"], "shapeup setup claude"
+  end
+
+  def test_says_nothing_about_skills_that_match_or_were_never_installed
+    states = { "shapeup" => :current, "shapeup-connect" => :missing }
+    events = stubbing(ShapeupCli::Commands::Setup, :claude_skill_states, states) { connect([], as_agent([])) }
+
+    refute events.first.key?("update")
   end
 
   private

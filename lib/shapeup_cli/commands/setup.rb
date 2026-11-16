@@ -7,6 +7,14 @@ module ShapeupCli
       SKILL_SOURCE = File.join(SKILLS_DIR, "shapeup", "SKILL.md")
       SKILL_NAMES = %w[ shapeup shapeup-connect ].freeze
 
+      def self.claude_skill_states
+        SKILL_NAMES.to_h do |name|
+          installed = File.join(Dir.home, ".claude", "skills", name, "SKILL.md")
+          current = File.exist?(installed) && File.read(installed) == File.read(File.join(SKILLS_DIR, name, "SKILL.md"))
+          [ name, File.exist?(installed) ? (current ? :current : :stale) : :missing ]
+        end
+      end
+
       def self.metadata
         {
           command: "setup",

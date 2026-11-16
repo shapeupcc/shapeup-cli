@@ -127,4 +127,15 @@ class OutputTest < Minitest::Test
 
     assert_equal "1\n2\n", output
   end
+
+  def test_markdown_table_takes_columns_from_every_row
+    data = [ { "id" => 1, "title" => "First" }, { "id" => 2, "title" => "Second", "assignee" => "Bond", "tags" => [ "a" ] } ]
+    result = { "content" => [ { "type" => "text", "text" => JSON.generate(data) } ] }
+
+    header, _divider, *rows = capture_io { ShapeupCli::Output.render(result, mode: :markdown) }.first.lines(chomp: true)
+
+    assert_equal "| Id | Title | Assignee |", header
+    assert_equal "| 1 | First |  |", rows.first
+    assert_equal "| 2 | Second | Bond |", rows.last
+  end
 end

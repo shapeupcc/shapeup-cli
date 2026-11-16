@@ -189,7 +189,8 @@ module ShapeupCli
       return puts("_No results_") if items.empty?
       return items.each { |i| puts "- #{i}" } unless items.first.is_a?(Hash)
 
-      keys = items.first.keys.reject { |k| k.is_a?(String) && items.first[k].is_a?(Array) }
+      rows = items.grep(Hash)
+      keys = rows.flat_map(&:keys).uniq.reject { |k| rows.filter_map { |row| row[k] }.first.is_a?(Array) }
       keys = keys.first(6) # Keep tables readable
 
       # Header
