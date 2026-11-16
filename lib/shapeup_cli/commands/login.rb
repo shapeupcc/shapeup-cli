@@ -33,7 +33,7 @@ module ShapeupCli
         org = choose_organisation(orgs)
 
         profile_name = @profile_name || agent_name(token, org) || (org ? slug(org["name"]) : slug(URI.parse(@host).host))
-        Config.save_profile(profile_name, token: token, host: @host, organisation_id: org&.dig("id"), display_name: org&.dig("name") || profile_name)
+        Config.save_profile(profile_name, token: token, host: @host, organisation_id: org&.dig("id"), display_name: org&.dig("name") || profile_name, revocable: @token.nil?)
 
         if @token && org
           puts "\nProfile '#{profile_name}' saved. Your default profile is unchanged."

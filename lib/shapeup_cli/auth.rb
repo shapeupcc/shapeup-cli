@@ -54,6 +54,32 @@ module ShapeupCli
       Config.token
     end
 
+    REVOCATION_TIMEOUT = 10
+
+    def self.forget(name, profile)
+      return "Forgot '#{name}' on this machine. If you pasted that token in, it still works until you revoke it in ShapeUp." unless profile["revocable"]
+
+      revoke(host: profile["host"], token: profile["token"])
+      "Revoked '#{name}' on #{profile["host"]}."
+    rescue StandardError => e
+      "Couldn't revoke '#{name}' on #{profile["host"]} (#{e.message}). It's deleted here, but stays valid on the server until it expires."
+    end
+
+    def self.revoke(host:, token:)
+      uri = URI.parse("#{host}/oauth/revocation")
+      request = Net::HTTP::Post.new(uri)
+      request["Content-Type"] = "application/x-www-form-urlencoded"
+      request.body = URI.encode_www_form(token: token)
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == "https"
+      http.open_timeout = REVOCATION_TIMEOUT
+      http.read_timeout = REVOCATION_TIMEOUT
+      response = http.request(request)
+
+      raise Client::ApiError, "HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+    end
+
     # --- Private helpers ---
 
     def self.discover_metadata(host)

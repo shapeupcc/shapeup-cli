@@ -76,7 +76,7 @@ module ShapeupCli
 
           agent = choose_agent(mine["agents"], handle, can_add: mine["can_add"])
           token = Output.extract_data(call_tool("issue_my_agent_token", agent: agent["id"].to_s))["token"]
-          Config.save_profile(agent["name"], token: token, host: Config.host, organisation_id: org_id.to_s, display_name: agent["display_name"])
+          Config.save_profile(agent["name"], token: token, host: Config.host, organisation_id: org_id.to_s, display_name: agent["display_name"], revocable: true)
 
           [ agent["name"], Client.new(host: Config.host, token: token) ]
         end

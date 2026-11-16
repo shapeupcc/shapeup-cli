@@ -141,7 +141,7 @@ module ShapeupCli
           select_first [
             { source: "SHAPEUP_HOST env", value: ENV["SHAPEUP_HOST"] },
             { source: picked_profile_source, value: Config.chosen_profile_value("host") },
-            { source: project_config_source, value: Config.project_config["host"] },
+            { source: "#{project_config_source} (ignored)", value: Config.project_config["host"], ignored: true },
             { source: "~/.config/shapeup/config.json", value: Config.global_config["host"] },
             { source: "profile '#{Config.current_profile_name}'", value: Config.current_profile&.dig("host") },
             { source: "built-in default", value: ShapeupCli::DEFAULT_HOST }
@@ -164,7 +164,7 @@ module ShapeupCli
         end
 
         def select_first(candidates)
-          winner = candidates.find { |c| !c[:value].nil? && c[:value] != "" }
+          winner = candidates.find { |c| !c[:ignored] && !c[:value].nil? && c[:value] != "" }
           candidates.each { |c| c[:selected] = c.equal?(winner) }
         end
 

@@ -8,6 +8,7 @@ module ShapeupCli
 
     # Project-level config — walks up from current directory
     PROJECT_CONFIG_NAME = ".shapeup/config.json"
+    PROJECT_CONFIG_KEYS = %w[ organisation_id ].freeze
 
     def self.ensure_config_dir
       FileUtils.mkdir_p(CONFIG_DIR)
@@ -24,7 +25,7 @@ module ShapeupCli
     #   }
     # }
 
-    def self.save_profile(name, token:, host:, organisation_id:, display_name: nil)
+    def self.save_profile(name, token:, host:, organisation_id:, display_name: nil, revocable: false)
       ensure_config_dir
       data = load_profiles_raw
       data["profiles"] ||= {}
@@ -32,7 +33,8 @@ module ShapeupCli
         "token" => token,
         "host" => host,
         "organisation_id" => organisation_id.to_s,
-        "name" => display_name || name
+        "name" => display_name || name,
+        "revocable" => revocable
       }
       # Set as default if it's the first profile
       data["default"] ||= name
@@ -70,6 +72,10 @@ module ShapeupCli
       load_profiles_raw.dig("profiles", name)
     end
 
+    def self.profiles
+      load_profiles_raw["profiles"] || {}
+    end
+
     def self.current_profile
       data = load_profiles_raw
       name = ENV["SHAPEUP_PROFILE"] || data["default"]
@@ -98,13 +104,13 @@ module ShapeupCli
       # Merge project-level config (walks up directory tree, takes precedence)
       if (project_config = find_project_config)
         project = JSON.parse(File.read(project_config)) rescue {}
-        data.merge!(project)
+        data.merge!(project.slice(*PROJECT_CONFIG_KEYS))
       end
 
       data
     end
 
-    # Resolution order: env var > profile picked with SHAPEUP_PROFILE > project config > global config > default profile > default
+    # Host: env var > profile picked with SHAPEUP_PROFILE > global config > default profile > default. A project file can only set the org.
     def self.host
       ENV["SHAPEUP_HOST"] || chosen_profile_value("host") || load_config["host"] || current_profile&.dig("host") || ShapeupCli::DEFAULT_HOST
     end
@@ -142,6 +148,10 @@ module ShapeupCli
       path = find_project_config
       return {} unless path
       JSON.parse(File.read(path)) rescue {}
+    end
+
+    def self.ignored_project_settings
+      project_config.keys - PROJECT_CONFIG_KEYS
     end
 
     # --- Pipe detection ---

@@ -85,7 +85,11 @@ module ShapeupCli
           return skip("project config", "none found") unless path
 
           JSON.parse(File.read(path))
-          pass "project config", path
+          ignored = Config.ignored_project_settings
+          return pass("project config", path) if ignored.empty?
+
+          warn! "project config", "#{path} sets #{ignored.join(", ")}, which a project file can't change, so it's ignored. Only the organisation is read from here.",
+            hint: "shapeup config set host <url>"
         rescue JSON::ParserError
           fail! "project config", "#{path} is not valid JSON"
         end

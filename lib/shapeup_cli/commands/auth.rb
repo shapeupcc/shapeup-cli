@@ -99,6 +99,8 @@ module ShapeupCli
 
         def remove
           name = positional_arg(1) || abort("Usage: shapeup auth remove <profile-name>")
+          profile = Config.profile(name) || abort("Profile '#{name}' not found.")
+          puts ShapeupCli::Auth.forget(name, profile)
           Config.delete_profile(name)
           puts "Removed profile: #{name}"
         end
