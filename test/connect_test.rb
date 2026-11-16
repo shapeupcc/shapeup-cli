@@ -220,6 +220,27 @@ class ConnectTest < Minitest::Test
     assert_equal false, events.last["acknowledged"]
   end
 
+  def test_every_request_says_how_to_recover_the_skill_after_a_compaction
+    events = connect([], as_agent([ item(11, 1, "miles") ]))
+
+    assert_includes events.last["after_compaction"], "reload after compaction"
+  end
+
+  def test_says_when_the_installed_skills_dont_match_this_cli
+    stale = { "shapeup" => :current, "shapeup-connect" => :stale }
+    events = stubbing(ShapeupCli::Commands::Setup, :claude_skill_states, stale) { connect([], as_agent([])) }
+
+    assert_includes events.first["update"], "shapeup-connect skill doesn't match shapeup #{ShapeupCli::VERSION}"
+    assert_includes events.first["update"], "shapeup setup claude"
+  end
+
+  def test_says_nothing_about_skills_that_match_or_were_never_installed
+    states = { "shapeup" => :current, "shapeup-connect" => :missing }
+    events = stubbing(ShapeupCli::Commands::Setup, :claude_skill_states, states) { connect([], as_agent([])) }
+
+    refute events.first.key?("update")
+  end
+
   private
     def run_until_request(argv, client)
       command = ShapeupCli::Commands::Connect.new(argv + [ "--org", "1" ])

@@ -156,11 +156,7 @@ module ShapeupCli
         end
 
         def check_claude_skills
-          states = Setup::SKILL_NAMES.to_h do |name|
-            installed = File.join(Dir.home, ".claude", "skills", name, "SKILL.md")
-            current = File.exist?(installed) && File.read(installed) == File.read(File.join(Setup::SKILLS_DIR, name, "SKILL.md"))
-            [ name, File.exist?(installed) ? (current ? :current : :stale) : :missing ]
-          end
+          states = Setup.claude_skill_states
 
           if states.values.all?(:current)
             pass "claude skills", "#{states.keys.join(", ")} installed and current"

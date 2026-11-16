@@ -109,7 +109,7 @@ module ShapeupCli
             next unless @handed_out.add?(item["id"])
 
             if trusted?(item["requester"], agent)
-              emit(type: "request", **item.transform_keys(&:to_sym), acknowledged: acknowledge(item))
+              emit(type: "request", **item.transform_keys(&:to_sym), acknowledged: acknowledge(item), after_compaction: AFTER_COMPACTION)
               @requested = @until_request
             else
               emit(type: "ignored", id: item["id"], requester: item["requester"], why: "#{item["requester"]["name"]} is not trusted (--trust #{@trust})")
@@ -122,6 +122,9 @@ module ShapeupCli
         end
 
         ACKNOWLEDGEMENT = "👀"
+        AFTER_COMPACTION = "If this session has compacted since it loaded the shapeup-connect skill, invoke that skill again " \
+          "with the argument `reload after compaction` before handling this request. A compaction can drop the skill, " \
+          "worker brief and all, and invoking it again brings it back and starts nothing new."
 
         def acknowledge(item)
           comment_id = item.dig("request", "comment_id") or return false
@@ -151,8 +154,15 @@ module ShapeupCli
 
         def announce(agent)
           claim_folder(agent)
-          emit(type: "connected", agent: agent, profile: @profile, organisation_id: org_id.to_s, trust: @trust, interval: @interval, folder: Dir.pwd)
+          emit(type: "connected", agent: agent, profile: @profile, organisation_id: org_id.to_s, trust: @trust, interval: @interval, folder: Dir.pwd, **skills_update)
           @connected = true
+        end
+
+        def skills_update
+          stale = Setup.claude_skill_states.select { |_, state| state == :stale }.keys
+          return {} if stale.empty?
+
+          { update: "The installed #{stale.join(" and ")} #{stale.one? ? "skill doesn't" : "skills don't"} match shapeup #{VERSION}. Run `shapeup setup claude`, then start a new session." }
         end
 
         def claim_folder(agent)

@@ -24,11 +24,15 @@ comment or reply to its comment. This session listens for those requests, does t
 current directory, and replies in that thread as the agent. The user should not need to copy a token or run anything
 themselves.
 
+**Invoked with `reload after compaction`,** start nothing: the connector and any worker are still
+running. You have the whole skill back, so carry on from the step you were on.
+
 ## Before you start
 
 1. **Check the CLI.** Run `shapeup version`. This skill needs 0.8.0 or later. If it is older, or
    `shapeup` is missing, tell the user to update it (`gem install shapeup-cli`) and stop. Never
-   install, upgrade or hunt for other copies of the CLI yourself.
+   install, upgrade or hunt for other copies of the CLI yourself. If a command this skill names
+   is unknown, the CLI is older than the skill: tell the user to run `gem update shapeup-cli`.
 
 2. **Check who the CLI is signed in as**, in the organisation the user means:
 
@@ -119,8 +123,8 @@ when your last turn ended in an error. Every line is one JSON event:
 
 | `type` | What to do |
 |--------|------------|
-| `connected` | The first time, tell the user the agent is listening; after a restart, say nothing. Note `profile`: from now on, run every ShapeUp command for this agent as `shapeup --profile <profile> ...` (leave out `--profile` when it is null). |
-| `request` | Handle it, below. |
+| `connected` | The first time, tell the user the agent is listening, and pass on `update` if the line has one; after a restart, say nothing. Note `profile`: from now on, run every ShapeUp command for this agent as `shapeup --profile <profile> ...` (leave out `--profile` when it is null). |
+| `request` | Do what its `after_compaction` says, then handle it, below. |
 | `ignored` | Tell the user in one line who asked and that they are not trusted. Do nothing else. |
 | `error` | If `code` is `folder`, another of the user's agents last listened in this folder: ask the user whether this folder is right for this agent, and only if they say yes, start again with `--here`. Otherwise, nothing while `retryable` is true: the connector keeps retrying by itself, pausing longer each time, up to two minutes. Otherwise tell the user the `message`. If the connector exits after a network error (`code` is `network`, or the message mentions a connection), wait a minute and restart it; give up and tell the user after five restarts in a row that never reach `connected`. For any other exit, restart it once. |
 
